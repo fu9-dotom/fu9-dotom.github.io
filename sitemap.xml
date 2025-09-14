@@ -2,19 +2,19 @@
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <sitemap>
-    <loc>http://localhost:1313/zh-cn/sitemap.xml</loc>
+    <loc>https://fu9-dotom.github.io/zh-cn/sitemap.xml</loc>
     
       <lastmod>2025-09-10T23:34:28+08:00</lastmod>
     
   </sitemap>
   
   <sitemap>
-    <loc>http://localhost:1313/en/sitemap.xml</loc>
+    <loc>https://fu9-dotom.github.io/en/sitemap.xml</loc>
     
   </sitemap>
   
   <sitemap>
-    <loc>http://localhost:1313/ar/sitemap.xml</loc>
+    <loc>https://fu9-dotom.github.io/ar/sitemap.xml</loc>
     
       <lastmod>2019-03-09T00:00:00+00:00</lastmod>
     
