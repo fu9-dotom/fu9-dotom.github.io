@@ -23,6 +23,30 @@
     <loc>http://localhost:1313/post/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
+    <loc>http://localhost:1313/tags/pwn/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="http://localhost:1313/en/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="ar"
+                href="http://localhost:1313/ar/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh-cn"
+                href="http://localhost:1313/tags/"
+                />
+  </url><url>
     <loc>http://localhost:1313/p/test/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
@@ -46,24 +70,6 @@
   </url><url>
     <loc>http://localhost:1313/p/test-chinese/</loc>
     <lastmod>2020-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/</loc>
-    <lastmod>2020-09-09T00:00:00+00:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="http://localhost:1313/en/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="ar"
-                href="http://localhost:1313/ar/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh-cn"
-                href="http://localhost:1313/tags/"
-                />
   </url><url>
     <loc>http://localhost:1313/categories/test/</loc>
     <lastmod>2020-09-09T00:00:00+00:00</lastmod>
