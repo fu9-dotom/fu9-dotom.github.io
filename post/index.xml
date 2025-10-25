@@ -322,17 +322,17 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://xp0int-team.feishu.cn/space/api/box/stream/download/asynccode/?code=YTg1YTMyYzliMTMwN2Y3NzljOGNmZDA5ZTA0YzU2ZmJfcmNhQXprN1JDVGRreW95TU1ReVRPOVBHUGpaZHJMbEJfVG9rZW46VEJjSWJSRHU0b0VCcGt4UXNnbGNXa1U4bldnXzE3NjEzOTI4NzU6MTc2MTM5NjQ3NV9WNA&#34;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/checksec.png&#34;
 	
 	
 	
 	loading=&#34;lazy&#34;
 	
-		alt=&#34;img&#34;
+		alt=&#34;checksec&#34;
 	
 	
-&gt;&lt;/p&gt;
-&lt;p&gt;read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3，可以利用fmt任意地址读泄露libc和pie地址&lt;/p&gt;
+&gt;
+read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3，可以利用fmt任意地址读泄露libc和pie地址&lt;/p&gt;
 &lt;p&gt;随后任意地址写，修改freegot表为system地址(可以使用bss段上fmt的方法)&lt;/p&gt;
 &lt;p&gt;注意由于延迟绑定机制我们需要先调用一次free完成绑定，exp如下&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
