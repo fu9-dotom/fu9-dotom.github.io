@@ -2,25 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Categories on 扶光</title>
-        <link>http://localhost:1313/categories/</link>
+        <link>http://localhost:57391/categories/</link>
         <description>Recent content in Categories on 扶光</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>扶光</copyright>
-        <lastBuildDate>Wed, 09 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 09 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:57391/categories/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>Test</title>
-        <link>http://localhost:1313/categories/test/</link>
+        <link>http://localhost:57391/categories/test/</link>
         <pubDate>Wed, 09 Sep 2020 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/categories/test/</guid>
-        <description>&lt;img src="http://localhost:1313/categories/test/hutomo-abrianto-l2jk-uxb1BY-unsplash.jpg" alt="Featured image of post Test" /&gt;</description>
+        <guid>http://localhost:57391/categories/test/</guid>
+        <description>&lt;img src="http://localhost:57391/categories/test/hutomo-abrianto-l2jk-uxb1BY-unsplash.jpg" alt="Featured image of post Test" /&gt;</description>
         </item>
         <item>
         <title>测试</title>
-        <link>http://localhost:1313/categories/%E6%B5%8B%E8%AF%95/</link>
+        <link>http://localhost:57391/categories/%E6%B5%8B%E8%AF%95/</link>
         <pubDate>Wed, 09 Sep 2020 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/categories/%E6%B5%8B%E8%AF%95/</guid>
+        <guid>http://localhost:57391/categories/%E6%B5%8B%E8%AF%95/</guid>
         <description></description>
         </item>
         
