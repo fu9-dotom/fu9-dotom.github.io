@@ -2,33 +2,33 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Tags on 扶光的故事集</title>
-        <link>http://localhost:1313/tags/</link>
+        <link>https://fu9-dotom.github.io/tags/</link>
         <description>Recent content in Tags on 扶光的故事集</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>chang</copyright>
-        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="https://fu9-dotom.github.io/tags/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>Pwn</title>
-        <link>http://localhost:1313/tags/pwn/</link>
+        <link>https://fu9-dotom.github.io/tags/pwn/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>http://localhost:1313/tags/pwn/</guid>
+        <guid>https://fu9-dotom.github.io/tags/pwn/</guid>
         <description></description>
         </item>
         <item>
         <title>写与摘</title>
-        <link>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</link>
+        <link>https://fu9-dotom.github.io/tags/%E5%86%99%E4%B8%8E%E6%91%98/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</guid>
+        <guid>https://fu9-dotom.github.io/tags/%E5%86%99%E4%B8%8E%E6%91%98/</guid>
         <description></description>
         </item>
         <item>
         <title>Test</title>
-        <link>http://localhost:1313/tags/test/</link>
+        <link>https://fu9-dotom.github.io/tags/test/</link>
         <pubDate>Wed, 09 Sep 2020 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/tags/test/</guid>
+        <guid>https://fu9-dotom.github.io/tags/test/</guid>
         <description></description>
         </item>
         

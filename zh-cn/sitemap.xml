@@ -2,95 +2,95 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://fu9-dotom.github.io/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="http://localhost:1313/en/"
+                href="https://fu9-dotom.github.io/en/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="http://localhost:1313/ar/"
+                href="https://fu9-dotom.github.io/ar/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="http://localhost:1313/"
+                href="https://fu9-dotom.github.io/"
                 />
   </url><url>
-    <loc>http://localhost:1313/post/</loc>
+    <loc>https://fu9-dotom.github.io/post/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/pwn/</loc>
+    <loc>https://fu9-dotom.github.io/tags/pwn/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</loc>
+    <loc>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://fu9-dotom.github.io/tags/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="http://localhost:1313/en/tags/"
+                href="https://fu9-dotom.github.io/en/tags/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="http://localhost:1313/ar/tags/"
+                href="https://fu9-dotom.github.io/ar/tags/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="http://localhost:1313/tags/"
+                href="https://fu9-dotom.github.io/tags/"
                 />
   </url><url>
-    <loc>http://localhost:1313/p/test/</loc>
+    <loc>https://fu9-dotom.github.io/p/test/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</loc>
+    <loc>https://fu9-dotom.github.io/p/%E8%BF%B7%E9%80%94/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
+    <loc>https://fu9-dotom.github.io/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/test-chinese/</loc>
+    <loc>https://fu9-dotom.github.io/p/test-chinese/</loc>
     <lastmod>2020-09-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/test/</loc>
+    <loc>https://fu9-dotom.github.io/tags/test/</loc>
     <lastmod>2020-09-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/page/</loc>
+    <loc>https://fu9-dotom.github.io/page/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/archives/</loc>
+    <loc>https://fu9-dotom.github.io/archives/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://fu9-dotom.github.io/categories/</loc>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="http://localhost:1313/en/categories/"
+                href="https://fu9-dotom.github.io/en/categories/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="http://localhost:1313/ar/categories/"
+                href="https://fu9-dotom.github.io/ar/categories/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="http://localhost:1313/categories/"
+                href="https://fu9-dotom.github.io/categories/"
                 />
   </url><url>
-    <loc>http://localhost:1313/links/</loc>
+    <loc>https://fu9-dotom.github.io/links/</loc>
   </url><url>
-    <loc>http://localhost:1313/search/</loc>
+    <loc>https://fu9-dotom.github.io/search/</loc>
   </url><url>
-    <loc>http://localhost:1313/categories/test/</loc>
+    <loc>https://fu9-dotom.github.io/categories/test/</loc>
   </url><url>
-    <loc>http://localhost:1313/%E5%85%B3%E4%BA%8E/</loc>
+    <loc>https://fu9-dotom.github.io/%E5%85%B3%E4%BA%8E/</loc>
   </url>
 </urlset>
