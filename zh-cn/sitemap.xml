@@ -50,6 +50,12 @@
     <loc>http://localhost:1313/p/test/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
+    <loc>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/p/test-chinese/</loc>
     <lastmod>2020-09-09T00:00:00+00:00</lastmod>
   </url><url>
