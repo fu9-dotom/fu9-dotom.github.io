@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-cn" dir="ltr">
-    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=62996&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="函数原型 1 int sprintf(char *str, const char *format, ...); str:目标字符数组，用于储存格式化后的结果\nformat:格式化字符串，包含普通字符和格式符，如a=%d\n&hellip;:可变参数，对应格式字符串中的格式符，类型需与格式符匹配。如 若参数format为a=%d则&hellip;应为int类型的整数\n">
 <title>s(n)printf函数fmt漏洞</title>
 
-<link rel='canonical' href='http://localhost:62996/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/'>
+<link rel='canonical' href='http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/'>
 
 <link rel="stylesheet" href="/scss/style.min.946cca6c6259ef94ac55abfae7c7bf3291ea3ed5eea17ef77500b257217c6710.css"><meta property='og:title' content="s(n)printf函数fmt漏洞">
 <meta property='og:description' content="函数原型 1 int sprintf(char *str, const char *format, ...); str:目标字符数组，用于储存格式化后的结果\nformat:格式化字符串，包含普通字符和格式符，如a=%d\n&hellip;:可变参数，对应格式字符串中的格式符，类型需与格式符匹配。如 若参数format为a=%d则&hellip;应为int类型的整数\n">
-<meta property='og:url' content='http://localhost:62996/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/'>
+<meta property='og:url' content='http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/'>
 <meta property='og:site_name' content='扶光的故事集'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='article:modified_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='og:image' content='http://localhost:62996/image/fuguang.jpg' />
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='article:modified_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/fuguang.jpg' />
 <meta name="twitter:title" content="s(n)printf函数fmt漏洞">
 <meta name="twitter:description" content="函数原型 1 int sprintf(char *str, const char *format, ...); str:目标字符数组，用于储存格式化后的结果\nformat:格式化字符串，包含普通字符和格式符，如a=%d\n&hellip;:可变参数，对应格式字符串中的格式符，类型需与格式符匹配。如 若参数format为a=%d则&hellip;应为int类型的整数\n"><meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content='http://localhost:62996/image/fuguang.jpg' />
+    <meta name="twitter:image" content='http://localhost:1313/image/fuguang.jpg' />
     </head>
     <body class="
     article-page
@@ -22,7 +22,7 @@
         (function() {
             const colorSchemeKey = 'StackColorScheme';
             if(!localStorage.getItem(colorSchemeKey)){
-                localStorage.setItem(colorSchemeKey, "auto");
+                localStorage.setItem(colorSchemeKey, "dark");
             }
         })();
     </script><script>
@@ -232,11 +232,11 @@
 
                             <select name="language" title="language" onchange="window.location.href = this.selectedOptions[0].value">
                                 
-                                    <option value="http://localhost:62996/en/" >English</option>
+                                    <option value="http://localhost:1313/en/" >English</option>
                                 
-                                    <option value="http://localhost:62996/" selected>中文</option>
+                                    <option value="http://localhost:1313/" selected>中文</option>
                                 
-                                    <option value="http://localhost:62996/ar/" >عربي</option>
+                                    <option value="http://localhost:1313/ar/" >عربي</option>
                                 
                             </select>
                         </li>
@@ -943,6 +943,52 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
         document.head.appendChild(customFont);
     }());
 </script>
+<style>
+  body {
+     
+    background: url("http://localhost:1313/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+   
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363;  
+    z-index: -1;  
+  }
+  
+</style>
+<script src=http://localhost:1313/background/sakura.js></script>
+<div id="particles-js"></div>
+
+<script src=http://localhost:1313/background/particles.min.js></script>
+<script>
+  particlesJS.load('particles-js', "http://localhost:1313/background/particlesjs-config.json", function() {
+    console.log('particles.js loaded - callback');
+  });
+</script>
+
+<style>
+  #particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: -1;
+  }
+</style>
 
     </body>
 </html>

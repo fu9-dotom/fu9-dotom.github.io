@@ -19,7 +19,7 @@
         (function() {
             const colorSchemeKey = 'StackColorScheme';
             if(!localStorage.getItem(colorSchemeKey)){
-                localStorage.setItem(colorSchemeKey, "auto");
+                localStorage.setItem(colorSchemeKey, "dark");
             }
         })();
     </script><script>
@@ -346,14 +346,6 @@
 
     <div class="tagCloud-tags">
         
-            <a href="/categories/test/" class="font_size_1">
-                Test
-            </a>
-        
-            <a href="/categories/%E6%B5%8B%E8%AF%95/" class="font_size_1">
-                测试
-            </a>
-        
     </div>
 </section>
 
@@ -379,8 +371,8 @@
                 Pwn
             </a>
         
-            <a href="/tags/%E4%B8%AD%E6%96%87/" class="font_size_1">
-                中文
+            <a href="/tags/test/" class="font_size_1">
+                Test
             </a>
         
     </div>
@@ -459,6 +451,52 @@
         document.head.appendChild(customFont);
     }());
 </script>
+<style>
+  body {
+     
+    background: url("http://localhost:1313/background/background.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+   
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363;  
+    z-index: -1;  
+  }
+  
+</style>
+<script src=http://localhost:1313/background/sakura.js></script>
+<div id="particles-js"></div>
+
+<script src=http://localhost:1313/background/particles.min.js></script>
+<script>
+  particlesJS.load('particles-js', "http://localhost:1313/background/particlesjs-config.json", function() {
+    console.log('particles.js loaded - callback');
+  });
+</script>
+
+<style>
+  #particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: -1;
+  }
+</style>
 
     </body>
 </html>
