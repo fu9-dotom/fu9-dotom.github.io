@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Posts on 扶光的故事集</title>
-        <link>https://fu9-dotom.github.io/post/</link>
+        <link>http://localhost:1313/post/</link>
         <description>Recent content in Posts on 扶光的故事集</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>chang</copyright>
-        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="https://fu9-dotom.github.io/post/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="http://localhost:1313/post/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>s(n)printf函数fmt漏洞</title>
-        <link>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</link>
+        <link>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</guid>
-        <description>&lt;img src="https://fu9-dotom.github.io/image/fuguang.jpg" alt="Featured image of post s(n)printf函数fmt漏洞" /&gt;&lt;h3 id=&#34;函数原型&#34;&gt;函数原型
+        <guid>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</guid>
+        <description>&lt;img src="http://localhost:1313/image/fuguang.jpg" alt="Featured image of post s(n)printf函数fmt漏洞" /&gt;&lt;h3 id=&#34;函数原型&#34;&gt;函数原型
 &lt;/h3&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -322,7 +322,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/checksec.png&#34;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/checksec.png&#34;
 	
 	
 	
@@ -457,21 +457,21 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
         </item>
         <item>
         <title>Test</title>
-        <link>https://fu9-dotom.github.io/p/test/</link>
+        <link>http://localhost:1313/p/test/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>https://fu9-dotom.github.io/p/test/</guid>
+        <guid>http://localhost:1313/p/test/</guid>
         <description>&lt;p&gt;这是新建的文档&lt;/p&gt;
 &lt;p&gt;怎么多了这么多奇怪的东西&lt;/p&gt;
 </description>
         </item>
         <item>
         <title>迷途</title>
-        <link>https://fu9-dotom.github.io/p/%E8%BF%B7%E9%80%94/</link>
+        <link>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>https://fu9-dotom.github.io/p/%E8%BF%B7%E9%80%94/</guid>
-        <description>&lt;img src="https://fu9-dotom.github.io/image/%E8%BF%B7%E9%80%9437.jpg" alt="Featured image of post 迷途" /&gt;&lt;blockquote&gt;
+        <guid>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</guid>
+        <description>&lt;img src="http://localhost:1313/image/%E8%BF%B7%E9%80%9437.jpg" alt="Featured image of post 迷途" /&gt;&lt;blockquote&gt;
 &lt;p&gt;迷失的枫跌跌撞撞            &lt;br&gt;
 青涩的蓝天也被扰乱了模样           &lt;br&gt;
 昏昏残阳，举目枯黄            &lt;br&gt;
@@ -497,7 +497,7 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 反反复复，跌跌荡荡                   &lt;br&gt;
 咀嚼着艰难苦恨与世界和自我对抗&lt;/p&gt;
 &lt;p&gt;2025.10  -山
-&lt;img src=&#34;https://fu9-dotom.github.io/image/%e8%bf%b7%e9%80%94%e6%b5%81%e8%90%a4.jpg&#34;
+&lt;img src=&#34;http://localhost:1313/image/%e8%bf%b7%e9%80%94%e6%b5%81%e8%90%a4.jpg&#34;
 	
 	
 	
@@ -511,11 +511,11 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
         </item>
         <item>
         <title>Chinese Test</title>
-        <link>https://fu9-dotom.github.io/p/test-chinese/</link>
+        <link>http://localhost:1313/p/test-chinese/</link>
         <pubDate>Wed, 09 Sep 2020 00:00:00 +0000</pubDate>
         
-        <guid>https://fu9-dotom.github.io/p/test-chinese/</guid>
-        <description>&lt;img src="https://fu9-dotom.github.io/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash.jpg" alt="Featured image of post Chinese Test" /&gt;&lt;h2 id=&#34;正文测试&#34;&gt;正文测试
+        <guid>http://localhost:1313/p/test-chinese/</guid>
+        <description>&lt;img src="http://localhost:1313/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash.jpg" alt="Featured image of post Chinese Test" /&gt;&lt;h2 id=&#34;正文测试&#34;&gt;正文测试
 &lt;/h2&gt;&lt;p&gt;而这些并不是完全重要，更加重要的问题是， 带着这些问题，我们来审视一下学生会退会。 既然如何， 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 我们不得不面对一个非常尴尬的事实，那就是， 可是，即使是这样，学生会退会的出现仍然代表了一定的意义。 学生会退会，发生了会如何，不发生又会如何。 经过上述讨论， 生活中，若学生会退会出现了，我们就不得不考虑它出现了的事实。 学生会退会，到底应该如何实现。 这样看来， 在这种困难的抉择下，本人思来想去，寝食难安。 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 就我个人来说，学生会退会对我的意义，不能不说非常重大。 莎士比亚曾经提到过，人的一生是短的，但如果卑劣地过这一生，就太长了。这似乎解答了我的疑惑。 莫扎特说过一句富有哲理的话，谁和我一样用功，谁就会和我一样成功。这启发了我， 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 学生会退会，到底应该如何实现。 一般来说， 从这个角度来看， 这种事实对本人来说意义重大，相信对这个世界也是有一定意义的。 在这种困难的抉择下，本人思来想去，寝食难安。 了解清楚学生会退会到底是一种怎么样的存在，是解决一切问题的关键。 一般来说， 生活中，若学生会退会出现了，我们就不得不考虑它出现了的事实。 问题的关键究竟为何？ 而这些并不是完全重要，更加重要的问题是。&lt;/p&gt;
 &lt;p&gt;奥斯特洛夫斯基曾经说过，共同的事业，共同的斗争，可以使人们产生忍受一切的力量。　带着这句话，我们还要更加慎重的审视这个问题： 一般来讲，我们都必须务必慎重的考虑考虑。 既然如此， 这种事实对本人来说意义重大，相信对这个世界也是有一定意义的。 带着这些问题，我们来审视一下学生会退会。 我认为， 我认为， 在这种困难的抉择下，本人思来想去，寝食难安。 问题的关键究竟为何？ 每个人都不得不面对这些问题。 在面对这种问题时， 要想清楚，学生会退会，到底是一种怎么样的存在。 我认为， 既然如此， 每个人都不得不面对这些问题。 在面对这种问题时， 那么， 我认为， 学生会退会因何而发生。&lt;/p&gt;
 &lt;h2 id=&#34;引用&#34;&gt;引用
@@ -527,10 +527,10 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 &lt;p&gt;&lt;em&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.youtube.com/watch?v=3aypp_YlBzI&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;最暖的憂傷 - 田馥甄&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;&lt;/blockquote&gt;
 &lt;h2 id=&#34;图片&#34;&gt;图片
-&lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash.jpg&#34;
+&lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash.jpg&#34;
 	width=&#34;667&#34;
 	height=&#34;1000&#34;
-	srcset=&#34;https://fu9-dotom.github.io/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash_hu_e98fca2b4272416e.jpg 480w, https://fu9-dotom.github.io/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash_hu_e3d37c9ded115b12.jpg 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash_hu_e98fca2b4272416e.jpg 480w, http://localhost:1313/p/test-chinese/florian-klauer-nptLmg6jqDo-unsplash_hu_e3d37c9ded115b12.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Photo by Florian Klauer on Unsplash&#34;
@@ -540,10 +540,10 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 		data-flex-grow=&#34;66&#34;
 		data-flex-basis=&#34;160px&#34;
 	
-&gt;  &lt;img src=&#34;https://fu9-dotom.github.io/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash.jpg&#34;
+&gt;  &lt;img src=&#34;http://localhost:1313/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash.jpg&#34;
 	width=&#34;1000&#34;
 	height=&#34;667&#34;
-	srcset=&#34;https://fu9-dotom.github.io/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash_hu_e13c58d5189f892c.jpg 480w, https://fu9-dotom.github.io/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash_hu_8fc948b7ee525251.jpg 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash_hu_e13c58d5189f892c.jpg 480w, http://localhost:1313/p/test-chinese/luca-bravo-alS7ewQ41M8-unsplash_hu_8fc948b7ee525251.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Photo by Luca Bravo on Unsplash&#34;
@@ -554,10 +554,10 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 		data-flex-basis=&#34;359px&#34;
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash.jpg&#34;
 	width=&#34;1000&#34;
 	height=&#34;750&#34;
-	srcset=&#34;https://fu9-dotom.github.io/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash_hu_503c0ebcc5245e10.jpg 480w, https://fu9-dotom.github.io/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash_hu_48c98de55fb3c999.jpg 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash_hu_503c0ebcc5245e10.jpg 480w, http://localhost:1313/p/test-chinese/helena-hertz-wWZzXlDpMog-unsplash_hu_48c98de55fb3c999.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Photo by Helena Hertz on Unsplash&#34;
@@ -567,10 +567,10 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 		data-flex-grow=&#34;133&#34;
 		data-flex-basis=&#34;320px&#34;
 	
-&gt;  &lt;img src=&#34;https://fu9-dotom.github.io/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash.jpg&#34;
+&gt;  &lt;img src=&#34;http://localhost:1313/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash.jpg&#34;
 	width=&#34;667&#34;
 	height=&#34;1000&#34;
-	srcset=&#34;https://fu9-dotom.github.io/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash_hu_f81a3588c5c4a663.jpg 480w, https://fu9-dotom.github.io/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash_hu_1c52ba2a4ad7b9a0.jpg 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash_hu_f81a3588c5c4a663.jpg 480w, http://localhost:1313/p/test-chinese/hudai-gayiran-3Od_VKcDEAA-unsplash_hu_1c52ba2a4ad7b9a0.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Photo by Hudai Gayiran on Unsplash&#34;
@@ -595,6 +595,127 @@ read(0, s, 0x438uLL);长度不够rop但vul()函数的snprintf函数可溢出v3�
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;相册语法来自 &lt;a class=&#34;link&#34; href=&#34;https://typlog.com/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;Typlog&lt;/a&gt;&lt;/p&gt;
+</description>
+        </item>
+        <item>
+        <title></title>
+        <link>http://localhost:1313/p/</link>
+        <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/</guid>
+        <description>&lt;p&gt;由于格式化字符串不在栈上，无法直接将想要改写的地址指针放置在栈上，也就没办法实现任意地址写。那么就要想办法将想改写的地址指针放到栈上&lt;/p&gt;
+&lt;p&gt;%x$n 写地址时是将此处数据作为指针，改写的是该指针指向的内容&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;A&amp;ndash;&amp;gt;&lt;/th&gt;
+          &lt;th&gt;B&amp;ndash;&amp;gt;&lt;/th&gt;
+          &lt;th&gt;C&amp;ndash;&amp;gt;&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;假设A的偏移为x，%x$n会将B作为指针，改写其指向的内容C&lt;/p&gt;
+&lt;p&gt;如果我们想修改printf的got表，首先需要如下结构&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;D&amp;ndash;&amp;gt;&lt;/th&gt;
+          &lt;th&gt;printf@got&lt;/th&gt;
+          &lt;th&gt;printf真实地址&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;栈上没有这种结构，我们找相似地址然后修改低字节从而向栈上写入got&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759637205705-7dd194fb-cdad-42c7-a45d-2288ad2fe37b.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;input disabled=&#34;&#34; type=&#34;checkbox&#34;&gt; &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;printf_got地址为0x404028&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649224126-598aee67-5c10-488a-a2d5-56fd61ee7a0d.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;这个就很像&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759648444663-abbc485c-f13e-4060-932f-dd60c81169d3.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;（这个图和其他图不是在同一次运行）&lt;/p&gt;
+&lt;p&gt;利用这个三连指针结构，将&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649565112-5814ca12-2a35-4c5d-8659-f76eec1cbb28.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;修改低二字节成为上面的&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649580096-2528ff1a-3a01-40ff-9463-a4c4a9e39cd6.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649280518-d4156c43-a794-4b67-bab4-c3b4c777c3fc.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649518525-d9925b2a-143e-479c-b36b-4b99967fcb28.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;修改完毕后如上  ，出现了&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649527893-330306f9-5f76-42f2-aac7-0cc112fa2fc3.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;，可以修改0x40136f低二字节使其成为printf@got&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649679420-b5ac9be9-ed6f-40cb-af53-ae985a3f3ada.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2025/png/51227729/1759649707686-9a5822d1-c234-4f64-a137-e7e30ffdc0d9.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;出现了D&amp;ndash;&amp;gt;printf@got&amp;ndash;&amp;gt;printf真实地址 的结构，修改printf真实地址的低四字节使其成为system真实地址&lt;/p&gt;
+&lt;p&gt;例题fmt_S（上面那个就是）&lt;/p&gt;
 </description>
         </item>
         
