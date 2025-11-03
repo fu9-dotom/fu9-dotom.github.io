@@ -20,6 +20,9 @@
                 href="http://localhost:1313/"
                 />
   </url><url>
+    <loc>http://localhost:1313/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/post/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
@@ -47,26 +50,19 @@
                 href="http://localhost:1313/tags/"
                 />
   </url><url>
-    <loc>http://localhost:1313/p/test/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
-  </url><url>
     <loc>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/test-chinese/</loc>
-    <lastmod>2020-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/test/</loc>
-    <lastmod>2020-09-09T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>http://localhost:1313/page/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/archives/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/</loc>
   </url><url>
     <loc>http://localhost:1313/p/</loc>
   </url><url>
