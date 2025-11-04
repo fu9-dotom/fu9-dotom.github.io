@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Pwn on 扶光的故事集</title>
-        <link>http://localhost:1313/tags/pwn/</link>
+        <link>https://fu9-dotom.github.io/tags/pwn/</link>
         <description>Recent content in Pwn on 扶光的故事集</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>chang</copyright>
-        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="http://localhost:1313/tags/pwn/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 10 Sep 2025 23:34:28 +0800</lastBuildDate><atom:link href="https://fu9-dotom.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>bss段上格式化字符串漏洞</title>
-        <link>http://localhost:1313/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</link>
+        <link>https://fu9-dotom.github.io/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>http://localhost:1313/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</guid>
-        <description>&lt;img src="http://localhost:1313/image/bssfmt.jpg" alt="Featured image of post bss段上格式化字符串漏洞" /&gt;&lt;p&gt;由于格式化字符串不在栈上，无法直接将想要改写的地址指针放置在栈上，也就没办法实现任意地址写。那么就要想办法将想改写的地址指针放到栈上&lt;/p&gt;
+        <guid>https://fu9-dotom.github.io/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</guid>
+        <description>&lt;img src="https://fu9-dotom.github.io/image/bssfmt.jpg" alt="Featured image of post bss段上格式化字符串漏洞" /&gt;&lt;p&gt;由于格式化字符串不在栈上，无法直接将想要改写的地址指针放置在栈上，也就没办法实现任意地址写。那么就要想办法将想改写的地址指针放到栈上&lt;/p&gt;
 &lt;p&gt;%x$n 写地址时是将此处数据作为指针，改写的是该指针指向的内容&lt;/p&gt;
 &lt;table&gt;
   &lt;thead&gt;
@@ -40,7 +40,7 @@
   &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;栈上没有这种结构，我们找相似地址然后修改低字节从而向栈上写入got&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/1.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/1.png&#34;
 	
 	
 	
@@ -54,7 +54,7 @@
 &lt;li&gt;&lt;input disabled=&#34;&#34; type=&#34;checkbox&#34;&gt; &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;printf_got地址为0x404028&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/2.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/2.png&#34;
 	
 	
 	
@@ -65,7 +65,7 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;这个就很像&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/3.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/3.png&#34;
 	
 	
 	
@@ -75,7 +75,7 @@
 	
 	
 &gt;（这个图和其他图不是在同一次运行）&lt;/p&gt;
-&lt;p&gt;利用这个三连指针结构，将&lt;img src=&#34;http://localhost:1313/image/bssfmt/9.png&#34;
+&lt;p&gt;利用这个三连指针结构，将&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/9.png&#34;
 	
 	
 	
@@ -84,7 +84,7 @@
 		alt=&#34;9&#34;
 	
 	
-&gt;修改低二字节成为上面的&lt;img src=&#34;http://localhost:1313/image/bssfmt/10.png&#34;
+&gt;修改低二字节成为上面的&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/10.png&#34;
 	
 	
 	
@@ -94,7 +94,7 @@
 	
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/4.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/4.png&#34;
 	
 	
 	
@@ -104,7 +104,7 @@
 	
 	
 &gt;
-&lt;img src=&#34;http://localhost:1313/image/bssfmt/5.png&#34;
+&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/5.png&#34;
 	
 	
 	
@@ -114,7 +114,7 @@
 	
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;修改完毕后如上  ，出现了&lt;img src=&#34;http://localhost:1313/image/bssfmt/6.png&#34;
+&lt;p&gt;修改完毕后如上  ，出现了&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/6.png&#34;
 	
 	
 	
@@ -124,7 +124,7 @@
 	
 	
 &gt;，可以修改0x40136f低二字节使其成为printf@got&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/8.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/8.png&#34;
 	
 	
 	
@@ -134,7 +134,7 @@
 	
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/bssfmt/8.png&#34;
+&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/bssfmt/8.png&#34;
 	
 	
 	
@@ -436,11 +436,11 @@
         </item>
         <item>
         <title>s(n)printf函数fmt漏洞</title>
-        <link>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</link>
+        <link>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</link>
         <pubDate>Wed, 10 Sep 2025 23:34:28 +0800</pubDate>
         
-        <guid>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</guid>
-        <description>&lt;img src="http://localhost:1313/image/fuguang.jpg" alt="Featured image of post s(n)printf函数fmt漏洞" /&gt;&lt;h3 id=&#34;函数原型&#34;&gt;函数原型
+        <guid>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</guid>
+        <description>&lt;img src="https://fu9-dotom.github.io/image/fuguang.jpg" alt="Featured image of post s(n)printf函数fmt漏洞" /&gt;&lt;h3 id=&#34;函数原型&#34;&gt;函数原型
 &lt;/h3&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -749,7 +749,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/image/checksec.png&#34;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://fu9-dotom.github.io/image/checksec.png&#34;
 	
 	
 	
