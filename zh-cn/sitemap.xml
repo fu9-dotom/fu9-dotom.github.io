@@ -2,93 +2,98 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://fu9-dotom.github.io/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+    <loc>http://localhost:1313/</loc>
+    <lastmod>2025-12-06T23:34:28+08:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="https://fu9-dotom.github.io/en/"
+                href="http://localhost:1313/en/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="https://fu9-dotom.github.io/ar/"
+                href="http://localhost:1313/ar/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="https://fu9-dotom.github.io/"
+                href="http://localhost:1313/"
                 />
   </url><url>
-    <loc>https://fu9-dotom.github.io/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+    <loc>http://localhost:1313/post/</loc>
+    <lastmod>2025-12-06T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/post/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+    <loc>http://localhost:1313/tags/pwn/</loc>
+    <lastmod>2025-12-06T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/tags/pwn/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
-  </url><url>
-    <loc>https://fu9-dotom.github.io/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
-  </url><url>
-    <loc>https://fu9-dotom.github.io/tags/</loc>
-    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2025-12-06T23:34:28+08:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="https://fu9-dotom.github.io/en/tags/"
+                href="http://localhost:1313/en/tags/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="https://fu9-dotom.github.io/ar/tags/"
+                href="http://localhost:1313/ar/tags/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="https://fu9-dotom.github.io/tags/"
+                href="http://localhost:1313/tags/"
                 />
   </url><url>
-    <loc>https://fu9-dotom.github.io/p/%E8%BF%B7%E9%80%94/</loc>
+    <loc>http://localhost:1313/p/xswctf2025%E5%88%9D%E8%B5%9Bpwn-wp/</loc>
+    <lastmod>2025-12-06T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
+    <loc>http://localhost:1313/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/</loc>
     <lastmod>2025-09-10T23:34:28+08:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/page/</loc>
+    <loc>http://localhost:1313/p/%E8%BF%B7%E9%80%94/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/%E5%86%99%E4%B8%8E%E6%91%98/</loc>
+    <lastmod>2025-09-10T23:34:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/page/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/archives/</loc>
+    <loc>http://localhost:1313/archives/</loc>
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://fu9-dotom.github.io/p/</loc>
+    <loc>http://localhost:1313/p/</loc>
   </url><url>
-    <loc>https://fu9-dotom.github.io/p/</loc>
+    <loc>http://localhost:1313/p/</loc>
   </url><url>
-    <loc>https://fu9-dotom.github.io/categories/</loc>
+    <loc>http://localhost:1313/p/</loc>
+  </url><url>
+    <loc>http://localhost:1313/categories/</loc>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="https://fu9-dotom.github.io/en/categories/"
+                href="http://localhost:1313/en/categories/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="ar"
-                href="https://fu9-dotom.github.io/ar/categories/"
+                href="http://localhost:1313/ar/categories/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="zh-cn"
-                href="https://fu9-dotom.github.io/categories/"
+                href="http://localhost:1313/categories/"
                 />
   </url><url>
-    <loc>https://fu9-dotom.github.io/links/</loc>
+    <loc>http://localhost:1313/links/</loc>
   </url><url>
-    <loc>https://fu9-dotom.github.io/search/</loc>
+    <loc>http://localhost:1313/search/</loc>
   </url><url>
-    <loc>https://fu9-dotom.github.io/categories/test/</loc>
+    <loc>http://localhost:1313/categories/test/</loc>
   </url><url>
-    <loc>https://fu9-dotom.github.io/%E5%85%B3%E4%BA%8E/</loc>
+    <loc>http://localhost:1313/%E5%85%B3%E4%BA%8E/</loc>
   </url>
 </urlset>
