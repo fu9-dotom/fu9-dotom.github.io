@@ -20,10 +20,31 @@
                 href="http://localhost:1313/"
                 />
   </url><url>
+    <loc>http://localhost:1313/categories/</loc>
+    <lastmod>2026-02-02T00:43:28+08:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="http://localhost:1313/en/categories/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="ar"
+                href="http://localhost:1313/ar/categories/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh-cn"
+                href="http://localhost:1313/categories/"
+                />
+  </url><url>
     <loc>http://localhost:1313/p/house-of-forcegyctf_2020_force/</loc>
     <lastmod>2026-02-02T00:43:28+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
+    <lastmod>2026-02-02T00:43:28+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/pwn/</loc>
     <lastmod>2026-02-02T00:43:28+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/pwn/</loc>
@@ -71,25 +92,6 @@
     <loc>http://localhost:1313/p/</loc>
   </url><url>
     <loc>http://localhost:1313/p/</loc>
-  </url><url>
-    <loc>http://localhost:1313/p/</loc>
-  </url><url>
-    <loc>http://localhost:1313/categories/</loc>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="http://localhost:1313/en/categories/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="ar"
-                href="http://localhost:1313/ar/categories/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh-cn"
-                href="http://localhost:1313/categories/"
-                />
   </url><url>
     <loc>http://localhost:1313/links/</loc>
   </url><url>
