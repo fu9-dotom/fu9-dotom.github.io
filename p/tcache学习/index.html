@@ -2,17 +2,18 @@
 <html lang="zh-cn" dir="ltr">
     <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://hefangyu3313.github.io/2025/11/18/tcache-attack/\ntcache介绍 1.每个线程默认使用64个单链表结构的bins，每个bins最多存放7个chunk，64位机器16字节递增，从0x20到0x410，也就是说位于以上大小的chunk释放后都会先行存入到tcache bin中，当申请大于7个就会放入fastbins，但是tcache优先级高于fastbins，tcache先被申请出来 2.对于每个tcache bin单链表，它和fast bin一样都是先进后出，而且prev_inuse标记位都不会被清除，所以tcache bin中的chunk不会被合并，即使和Top chunk相邻。 tcache机制出现后，每次产生堆都会先产生一个0x250大小的堆块，该堆块位于堆的开头，用于记录64个bins的地址（这些地址指向用户数据部分）以及每个bins中chunk数量。在这个0x250大小的堆块中，前0x40个字节用于记录每个bins中chunk数量，每个字节对应一条tcache bin链的数量，从0x20开始到0x410结束，刚好64条链，然后剩下的每8字节记录一条tcache bin链的开头地址，也是从0x20开始到0x410结束。还有一点值得注意的是，tcache bin中的fd指针是指向malloc返回的地址，也就是用户数据部分，而不是像fast bin单链表那样fd指针指向chunk头。 tcache关键代码(2.35) 相关结构和基础操作 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 /* We overlay this structure on the user-data portion of a chunk when the chunk is stored in the per-thread cache. */ typedef struct tcache_entry { struct tcache_entry *next; /* This field exists to detect double frees. */ uintptr_t key; } tcache_entry; /* There is one of these for each thread, which contains the per-thread cache (hence &#34;tcache_perthread_struct&#34;). Keeping overall size low is mildly important. Note that COUNTS and ENTRIES are redundant (we could have just counted the linked list each time), this is for performance reasons. */ typedef struct tcache_perthread_struct { uint16_t counts[TCACHE_MAX_BINS];//每条链的chuunk数 tcache_entry *entries[TCACHE_MAX_BINS];//每条链的入口 } tcache_perthread_struct; tcache_perthread_struct是tcache的管理结构，counts里存放着每个tcache链上的chunk个数，entries是tcache链表的入口，与fastbinY差不多\n">
-<title></title>
+<title>tcache学习</title>
 
-<link rel='canonical' href='http://localhost:1313/p/'>
+<link rel='canonical' href='http://localhost:1313/p/tcache%E5%AD%A6%E4%B9%A0/'>
 
-<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="">
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="tcache学习">
 <meta property='og:description' content="https://hefangyu3313.github.io/2025/11/18/tcache-attack/\ntcache介绍 1.每个线程默认使用64个单链表结构的bins，每个bins最多存放7个chunk，64位机器16字节递增，从0x20到0x410，也就是说位于以上大小的chunk释放后都会先行存入到tcache bin中，当申请大于7个就会放入fastbins，但是tcache优先级高于fastbins，tcache先被申请出来 2.对于每个tcache bin单链表，它和fast bin一样都是先进后出，而且prev_inuse标记位都不会被清除，所以tcache bin中的chunk不会被合并，即使和Top chunk相邻。 tcache机制出现后，每次产生堆都会先产生一个0x250大小的堆块，该堆块位于堆的开头，用于记录64个bins的地址（这些地址指向用户数据部分）以及每个bins中chunk数量。在这个0x250大小的堆块中，前0x40个字节用于记录每个bins中chunk数量，每个字节对应一条tcache bin链的数量，从0x20开始到0x410结束，刚好64条链，然后剩下的每8字节记录一条tcache bin链的开头地址，也是从0x20开始到0x410结束。还有一点值得注意的是，tcache bin中的fd指针是指向malloc返回的地址，也就是用户数据部分，而不是像fast bin单链表那样fd指针指向chunk头。 tcache关键代码(2.35) 相关结构和基础操作 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 /* We overlay this structure on the user-data portion of a chunk when the chunk is stored in the per-thread cache. */ typedef struct tcache_entry { struct tcache_entry *next; /* This field exists to detect double frees. */ uintptr_t key; } tcache_entry; /* There is one of these for each thread, which contains the per-thread cache (hence &#34;tcache_perthread_struct&#34;). Keeping overall size low is mildly important. Note that COUNTS and ENTRIES are redundant (we could have just counted the linked list each time), this is for performance reasons. */ typedef struct tcache_perthread_struct { uint16_t counts[TCACHE_MAX_BINS];//每条链的chuunk数 tcache_entry *entries[TCACHE_MAX_BINS];//每条链的入口 } tcache_perthread_struct; tcache_perthread_struct是tcache的管理结构，counts里存放着每个tcache链上的chunk个数，entries是tcache链表的入口，与fastbinY差不多\n">
-<meta property='og:url' content='http://localhost:1313/p/'>
+<meta property='og:url' content='http://localhost:1313/p/tcache%E5%AD%A6%E4%B9%A0/'>
 <meta property='og:site_name' content='fuguang&#39;s storys'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' />
-<meta name="twitter:title" content="">
-<meta name="twitter:description" content="https://hefangyu3313.github.io/2025/11/18/tcache-attack/\ntcache介绍 1.每个线程默认使用64个单链表结构的bins，每个bins最多存放7个chunk，64位机器16字节递增，从0x20到0x410，也就是说位于以上大小的chunk释放后都会先行存入到tcache bin中，当申请大于7个就会放入fastbins，但是tcache优先级高于fastbins，tcache先被申请出来 2.对于每个tcache bin单链表，它和fast bin一样都是先进后出，而且prev_inuse标记位都不会被清除，所以tcache bin中的chunk不会被合并，即使和Top chunk相邻。 tcache机制出现后，每次产生堆都会先产生一个0x250大小的堆块，该堆块位于堆的开头，用于记录64个bins的地址（这些地址指向用户数据部分）以及每个bins中chunk数量。在这个0x250大小的堆块中，前0x40个字节用于记录每个bins中chunk数量，每个字节对应一条tcache bin链的数量，从0x20开始到0x410结束，刚好64条链，然后剩下的每8字节记录一条tcache bin链的开头地址，也是从0x20开始到0x410结束。还有一点值得注意的是，tcache bin中的fd指针是指向malloc返回的地址，也就是用户数据部分，而不是像fast bin单链表那样fd指针指向chunk头。 tcache关键代码(2.35) 相关结构和基础操作 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 /* We overlay this structure on the user-data portion of a chunk when the chunk is stored in the per-thread cache. */ typedef struct tcache_entry { struct tcache_entry *next; /* This field exists to detect double frees. */ uintptr_t key; } tcache_entry; /* There is one of these for each thread, which contains the per-thread cache (hence &#34;tcache_perthread_struct&#34;). Keeping overall size low is mildly important. Note that COUNTS and ENTRIES are redundant (we could have just counted the linked list each time), this is for performance reasons. */ typedef struct tcache_perthread_struct { uint16_t counts[TCACHE_MAX_BINS];//每条链的chuunk数 tcache_entry *entries[TCACHE_MAX_BINS];//每条链的入口 } tcache_perthread_struct; tcache_perthread_struct是tcache的管理结构，counts里存放着每个tcache链上的chunk个数，entries是tcache链表的入口，与fastbinY差不多\n">
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='article:modified_time' content='2025-09-10T23:34:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/bssfmt.jpg' />
+<meta name="twitter:title" content="tcache学习">
+<meta name="twitter:description" content="https://hefangyu3313.github.io/2025/11/18/tcache-attack/\ntcache介绍 1.每个线程默认使用64个单链表结构的bins，每个bins最多存放7个chunk，64位机器16字节递增，从0x20到0x410，也就是说位于以上大小的chunk释放后都会先行存入到tcache bin中，当申请大于7个就会放入fastbins，但是tcache优先级高于fastbins，tcache先被申请出来 2.对于每个tcache bin单链表，它和fast bin一样都是先进后出，而且prev_inuse标记位都不会被清除，所以tcache bin中的chunk不会被合并，即使和Top chunk相邻。 tcache机制出现后，每次产生堆都会先产生一个0x250大小的堆块，该堆块位于堆的开头，用于记录64个bins的地址（这些地址指向用户数据部分）以及每个bins中chunk数量。在这个0x250大小的堆块中，前0x40个字节用于记录每个bins中chunk数量，每个字节对应一条tcache bin链的数量，从0x20开始到0x410结束，刚好64条链，然后剩下的每8字节记录一条tcache bin链的开头地址，也是从0x20开始到0x410结束。还有一点值得注意的是，tcache bin中的fd指针是指向malloc返回的地址，也就是用户数据部分，而不是像fast bin单链表那样fd指针指向chunk头。 tcache关键代码(2.35) 相关结构和基础操作 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 /* We overlay this structure on the user-data portion of a chunk when the chunk is stored in the per-thread cache. */ typedef struct tcache_entry { struct tcache_entry *next; /* This field exists to detect double frees. */ uintptr_t key; } tcache_entry; /* There is one of these for each thread, which contains the per-thread cache (hence &#34;tcache_perthread_struct&#34;). Keeping overall size low is mildly important. Note that COUNTS and ENTRIES are redundant (we could have just counted the linked list each time), this is for performance reasons. */ typedef struct tcache_perthread_struct { uint16_t counts[TCACHE_MAX_BINS];//每条链的chuunk数 tcache_entry *entries[TCACHE_MAX_BINS];//每条链的入口 } tcache_perthread_struct; tcache_perthread_struct是tcache的管理结构，counts里存放着每个tcache链上的chunk个数，entries是tcache链表的入口，与fastbinY差不多\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/bssfmt.jpg' />
     </head>
     <body class="
     article-page
@@ -264,15 +265,31 @@
 
 
             <main class="main full-width">
-    <article class="main-article">
+    <article class="has-image main-article">
     <header class="article-header">
+        <div class="article-image">
+            <a href="/p/tcache%E5%AD%A6%E4%B9%A0/">
+                
+                    <img src="/image/bssfmt.jpg" loading="lazy" alt="Featured image of post tcache学习" />
+                
+            </a>
+        </div>
+    
 
     <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
     
 
     <div class="article-title-wrapper">
         <h2 class="article-title">
-            <a href="/p/"></a>
+            <a href="/p/tcache%E5%AD%A6%E4%B9%A0/">tcache学习</a>
         </h2>
     
         
@@ -281,6 +298,25 @@
     
     
     
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Sep 10, 2025</time>
+            </div>
+        
+
+        
+    </footer>
     
 
     
@@ -424,6 +460,12 @@
 
     <footer class="article-footer">
     
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+    </section>
+
 
     </footer>
 
@@ -434,6 +476,110 @@
     
 
     
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/%E5%88%9D%E8%AF%86io/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/iostart/iostart2.jpg" loading="lazy" data-key="" data-hash="/image/iostart/iostart2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">初识IO</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-orangefsop/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_orange.png" loading="lazy" data-key="" data-hash="/image/House_of_orange.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of orange&amp;&amp;FSOP</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-forcegyctf_2020_force/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_force.jpg" loading="lazy" data-key="" data-hash="/image/House_of_force.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of force&amp;&amp;gyctf_2020_force</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
 
      
     
