@@ -6,14 +6,30 @@
 
 <link rel='canonical' href='http://localhost:1313/p/house-of-orangefsop/'>
 
-<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="House of orange&&FSOP">
+<link rel="stylesheet" href="/scss/style.min.f29951529384267183dbb2bb71dfebce8cf9e242ddf6b2d967676156070babed.css"><meta property='og:title' content="House of orange&&FSOP">
 <meta property='og:description' content="本文参考 https://www.cnblogs.com/ZIKH26/articles/16712469.html\nHouse of orange house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法\n">
 <meta property='og:url' content='http://localhost:1313/p/house-of-orangefsop/'>
-<meta property='og:site_name' content='fuguang&#39;s storys'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/House_of_orange.png' />
+<meta property='og:site_name' content='FuGuang&#39;s Bolg'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='article:modified_time' content='2026-03-08T00:43:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/orange/House_of_orange.png' />
 <meta name="twitter:title" content="House of orange&&FSOP">
 <meta name="twitter:description" content="本文参考 https://www.cnblogs.com/ZIKH26/articles/16712469.html\nHouse of orange house of orange是一种利用堆溢出改小topchunk的size,然后通过申请一个大小在topchunk_size和mmap阈值(0x20000)之间的chunk，从而将原本的topchunk放入unsortedbin中的方法\n"><meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content='http://localhost:1313/image/House_of_orange.png' />
+    <meta name="twitter:image" content='http://localhost:1313/image/orange/House_of_orange.png' /><style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+<script>  
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
     </head>
     <body class="
     article-page
@@ -70,8 +86,8 @@
         
         
         <div class="site-meta">
-            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
-            <h2 class="site-description">Welcome ~</h2>
+            <h1 class="site-name"><a href="/">FuGuang&#39;s Bolg</a></h1>
+            <h2 class="site-description">向左向右但别退后</h2>
         </div>
     </header><ol class="menu-social">
             
@@ -280,7 +296,7 @@
         <div class="article-image">
             <a href="/p/house-of-orangefsop/">
                 
-                    <img src="/image/House_of_orange.png" loading="lazy" alt="Featured image of post House of orange&amp;&amp;FSOP" />
+                    <img src="/image/orange/House_of_orange.png" loading="lazy" alt="Featured image of post House of orange&amp;&amp;FSOP" />
                 
             </a>
         </div>
@@ -601,11 +617,13 @@
 </div><p>伪造fake_vtable和fake_fp，unsortedbinattack改_IO_list_all为main_area+88,则0x60大小的smallbin位置为一个chain，在哪里放好fake_fp，fake_fp的vtable为fake_vtable</p>
 <h3 id="fsop布局">FSOP布局
 </h3><p>首先篡改_IO_list_all为main_arena+88这个地址，chain字段是首地址加上0x68偏移得到的。因此chain字段决定了下一个IO_FILE结构体的地址为main_arena+88+0x68，这个地址恰好是smallbin中size为0x60的数组，如果我们能将一个chunk放到这个small bin中size为0x60的链上，那么篡改_IO_list_all为main_arena+88这个地址后，small bin中的chunk就是IO_FILE结构体了，将其申请出来后，我们就可以控制这块内存了，从而伪造vtable字段进行布局最终拿到shell。</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2026/png/51227729/1772894023071-2d861332-a4f2-4364-a95a-250002d3c943.png"
+<p><img src="/image/orange/FSOP.png"
 	
 	
 	
 	loading="lazy"
+	
+		alt="FSOP"
 	
 	
 ></p>
@@ -977,6 +995,44 @@
             
                 
 <article class="has-image">
+    <a href="/p/house-of-apple2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_apple2.jpg" loading="lazy" data-key="" data-hash="/image/House_of_apple2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of apple2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-apple1/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_apple1.jpg" loading="lazy" data-key="" data-hash="/image/House_of_apple1.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of apple1</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
     <a href="/p/house-of-obstack/">
         
         
@@ -1032,44 +1088,6 @@
 </article>
 
             
-                
-<article class="has-image">
-    <a href="/p/house-of-husk34c3ctf-readme_revenge/">
-        
-        
-            <div class="article-image">
-                
-                    <img src="/image/husk/House_of_husk.jpg" loading="lazy" data-key="" data-hash="/image/husk/House_of_husk.jpg"/>
-                
-            </div>
-        
-
-        <div class="article-details">
-            <h2 class="article-title">House of husk&amp;&amp;34c3CTF readme_revenge</h2>
-        </div>
-    </a>
-</article>
-
-            
-                
-<article class="has-image">
-    <a href="/p/house-of-stormbuu-0ctf_2018_heapstorm2/">
-        
-        
-            <div class="article-image">
-                
-                    <img src="/image/House_of_storm.jpg" loading="lazy" data-key="" data-hash="/image/House_of_storm.jpg"/>
-                
-            </div>
-        
-
-        <div class="article-details">
-            <h2 class="article-title">House of storm&amp;&amp;[BUU] 0ctf_2018_heapstorm2</h2>
-        </div>
-    </a>
-</article>
-
-            
         </div>
     </div>
 </aside>
@@ -1085,12 +1103,62 @@
         
             2025 - 
         
-        2026 chang
+        2026 FuGuang&#39;s Bolg
     </section>
     
     <section class="powerby">
         
-        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        共生产 19 篇文章，约 39.77k 字使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
         主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>

